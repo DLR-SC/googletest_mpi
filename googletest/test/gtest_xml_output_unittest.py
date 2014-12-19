@@ -64,12 +64,12 @@ else:
   # unittest.main() can't handle unknown flags
   sys.argv.remove(NO_STACKTRACE_SUPPORT_FLAG)
 
-EXPECTED_NON_EMPTY_XML = """<?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="26" failures="5" disabled="2" errors="0" time="*" timestamp="*" name="AllTests" ad_hoc_property="42">
-  <testsuite name="SuccessfulTest" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+EXPECTED_NON_EMPTY_XML_TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="26" failures="5" disabled="2" errors="0" time="*" timestamp="*" name="%(testsuites_name)s" ad_hoc_property="42">
+  <testsuite name="%(testsuites_name)s.SuccessfulTest" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="Succeeds" file="gtest_xml_output_unittest_.cc" line="51" status="run" result="completed" time="*" timestamp="*" classname="SuccessfulTest"/>
   </testsuite>
-  <testsuite name="FailedTest" tests="1" failures="1" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+  <testsuite name="%(testsuites_name)s.FailedTest" tests="1" failures="1" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="Fails" file="gtest_xml_output_unittest_.cc" line="59" status="run" result="completed" time="*" timestamp="*" classname="FailedTest">
       <failure message="gtest_xml_output_unittest_.cc:*&#x0A;Expected equality of these values:&#x0A;  1&#x0A;  2" type=""><![CDATA[gtest_xml_output_unittest_.cc:*
 Expected equality of these values:
@@ -77,7 +77,7 @@ Expected equality of these values:
   2%(stack)s]]></failure>
     </testcase>
   </testsuite>
-  <testsuite name="MixedResultTest" tests="3" failures="1" disabled="1" skipped="0" errors="0" time="*" timestamp="*">
+  <testsuite name="%(testsuites_name)s.MixedResultTest" tests="3" failures="1" disabled="1" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="Succeeds" file="gtest_xml_output_unittest_.cc" line="86" status="run" result="completed" time="*" timestamp="*" classname="MixedResultTest"/>
     <testcase name="Fails" file="gtest_xml_output_unittest_.cc" line="91" status="run" result="completed" time="*" timestamp="*" classname="MixedResultTest">
       <failure message="gtest_xml_output_unittest_.cc:*&#x0A;Expected equality of these values:&#x0A;  1&#x0A;  2" type=""><![CDATA[gtest_xml_output_unittest_.cc:*
@@ -91,24 +91,24 @@ Expected equality of these values:
     </testcase>
     <testcase name="DISABLED_test" file="gtest_xml_output_unittest_.cc" line="96" status="notrun" result="suppressed" time="*" timestamp="*" classname="MixedResultTest"/>
   </testsuite>
-  <testsuite name="XmlQuotingTest" tests="1" failures="1" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+  <testsuite name="%(testsuites_name)s.XmlQuotingTest" tests="1" failures="1" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="OutputsCData" file="gtest_xml_output_unittest_.cc" line="100" status="run" result="completed" time="*" timestamp="*" classname="XmlQuotingTest">
       <failure message="gtest_xml_output_unittest_.cc:*&#x0A;Failed&#x0A;XML output: &lt;?xml encoding=&quot;utf-8&quot;&gt;&lt;top&gt;&lt;![CDATA[cdata text]]&gt;&lt;/top&gt;" type=""><![CDATA[gtest_xml_output_unittest_.cc:*
 Failed
 XML output: <?xml encoding="utf-8"><top><![CDATA[cdata text]]>]]&gt;<![CDATA[</top>%(stack)s]]></failure>
     </testcase>
   </testsuite>
-  <testsuite name="InvalidCharactersTest" tests="1" failures="1" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+  <testsuite name="%(testsuites_name)s.InvalidCharactersTest" tests="1" failures="1" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="InvalidCharactersInMessage" file="gtest_xml_output_unittest_.cc" line="107" status="run" result="completed" time="*" timestamp="*" classname="InvalidCharactersTest">
       <failure message="gtest_xml_output_unittest_.cc:*&#x0A;Failed&#x0A;Invalid characters in brackets []" type=""><![CDATA[gtest_xml_output_unittest_.cc:*
 Failed
 Invalid characters in brackets []%(stack)s]]></failure>
     </testcase>
   </testsuite>
-  <testsuite name="DisabledTest" tests="1" failures="0" disabled="1" skipped="0" errors="0" time="*" timestamp="*">
+  <testsuite name="%(testsuites_name)s.DisabledTest" tests="1" failures="0" disabled="1" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="DISABLED_test_not_run" file="gtest_xml_output_unittest_.cc" line="66" status="notrun" result="suppressed" time="*" timestamp="*" classname="DisabledTest"/>
   </testsuite>
-  <testsuite name="SkippedTest" tests="3" failures="1" disabled="0" skipped="2" errors="0" time="*" timestamp="*">
+  <testsuite name="%(testsuites_name)s.SkippedTest" tests="3" failures="1" disabled="0" skipped="2" errors="0" time="*" timestamp="*">
     <testcase name="Skipped" status="run" file="gtest_xml_output_unittest_.cc" line="73" result="skipped" time="*" timestamp="*" classname="SkippedTest">
       <skipped message="gtest_xml_output_unittest_.cc:*&#x0A;"><![CDATA[gtest_xml_output_unittest_.cc:*
 %(stack)s]]></skipped>
@@ -127,7 +127,7 @@ It is good practice to tell why you skip a test.%(stack)s]]></skipped>
     </testcase>
 
   </testsuite>
-  <testsuite name="PropertyRecordingTest" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*" SetUpTestSuite="yes" TearDownTestSuite="aye">
+  <testsuite name="%(testsuites_name)s.PropertyRecordingTest" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*" SetUpTestSuite="yes" TearDownTestSuite="aye">
     <testcase name="OneProperty" file="gtest_xml_output_unittest_.cc" line="119" status="run" result="completed" time="*" timestamp="*" classname="PropertyRecordingTest">
       <properties>
         <property name="key_1" value="1"/>
@@ -151,7 +151,7 @@ It is good practice to tell why you skip a test.%(stack)s]]></skipped>
       </properties>
     </testcase>
   </testsuite>
-  <testsuite name="NoFixtureTest" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+  <testsuite name="%(testsuites_name)s.NoFixtureTest" tests="3" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
      <testcase name="RecordProperty" file="gtest_xml_output_unittest_.cc" line="138" status="run" result="completed" time="*" timestamp="*" classname="NoFixtureTest">
        <properties>
          <property name="key" value="1"/>
@@ -168,57 +168,99 @@ It is good practice to tell why you skip a test.%(stack)s]]></skipped>
        </properties>
      </testcase>
   </testsuite>
-  <testsuite name="Single/ValueParamTest" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+  <testsuite name="%(testsuites_name)s.Single/ValueParamTest" tests="4" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="HasValueParamAttribute/0" file="gtest_xml_output_unittest_.cc" line="162" value_param="33" status="run" result="completed" time="*" timestamp="*" classname="Single/ValueParamTest" />
     <testcase name="HasValueParamAttribute/1" file="gtest_xml_output_unittest_.cc" line="162" value_param="42" status="run" result="completed" time="*" timestamp="*" classname="Single/ValueParamTest" />
     <testcase name="AnotherTestThatHasValueParamAttribute/0" file="gtest_xml_output_unittest_.cc" line="163" value_param="33" status="run" result="completed" time="*" timestamp="*" classname="Single/ValueParamTest" />
     <testcase name="AnotherTestThatHasValueParamAttribute/1" file="gtest_xml_output_unittest_.cc" line="163" value_param="42" status="run" result="completed" time="*" timestamp="*" classname="Single/ValueParamTest" />
   </testsuite>
-  <testsuite name="TypedTest/0" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+  <testsuite name="%(testsuites_name)s.TypedTest/0" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="HasTypeParamAttribute" file="gtest_xml_output_unittest_.cc" line="171" type_param="*" status="run" result="completed" time="*" timestamp="*" classname="TypedTest/0" />
   </testsuite>
-  <testsuite name="TypedTest/1" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+  <testsuite name="%(testsuites_name)s.TypedTest/1" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="HasTypeParamAttribute" file="gtest_xml_output_unittest_.cc" line="171" type_param="*" status="run" result="completed" time="*" timestamp="*" classname="TypedTest/1" />
   </testsuite>
-  <testsuite name="Single/TypeParameterizedTestSuite/0" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+  <testsuite name="%(testsuites_name)s.Single/TypeParameterizedTestSuite/0" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="HasTypeParamAttribute" file="gtest_xml_output_unittest_.cc" line="178" type_param="*" status="run" result="completed" time="*" timestamp="*" classname="Single/TypeParameterizedTestSuite/0" />
   </testsuite>
-  <testsuite name="Single/TypeParameterizedTestSuite/1" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+  <testsuite name="%(testsuites_name)s.Single/TypeParameterizedTestSuite/1" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="HasTypeParamAttribute" file="gtest_xml_output_unittest_.cc" line="178" type_param="*" status="run" result="completed" time="*" timestamp="*" classname="Single/TypeParameterizedTestSuite/1" />
   </testsuite>
-</testsuites>""" % {
-    'stack': STACK_TRACE_TEMPLATE
-}
+</testsuites>"""
+
+EXPECTED_NON_EMPTY_XML = EXPECTED_NON_EMPTY_XML_TEMPLATE % {'stack': STACK_TRACE_TEMPLATE, 'testsuites_name': 'gtest_xml_output_unittest_'}
+EXPECTED_NON_EMPTY_XML_MPI = EXPECTED_NON_EMPTY_XML_TEMPLATE % {'stack': STACK_TRACE_TEMPLATE, 'testsuites_name': 'gtest_xml_output_unittest__np1'}
 
 EXPECTED_FILTERED_TEST_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <testsuites tests="1" failures="0" disabled="0" errors="0" time="*"
-            timestamp="*" name="AllTests" ad_hoc_property="42">
-  <testsuite name="SuccessfulTest" tests="1" failures="0" disabled="0" skipped="0"
+            timestamp="*" name="gtest_xml_output_unittest_" ad_hoc_property="42">
+  <testsuite name="gtest_xml_output_unittest_.SuccessfulTest" tests="1" failures="0" disabled="0" skipped="0"
+             errors="0" time="*" timestamp="*">
+    <testcase name="Succeeds" file="gtest_xml_output_unittest_.cc" line="51" status="run" result="completed" time="*" timestamp="*" classname="SuccessfulTest"/>
+  </testsuite>
+</testsuites>"""
+
+EXPECTED_FILTERED_TEST_XML_MPI = """<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="*"
+            timestamp="*" name="gtest_xml_output_unittest__np1" ad_hoc_property="42">
+  <testsuite name="gtest_xml_output_unittest__np1.SuccessfulTest" tests="1" failures="0" disabled="0" skipped="0"
              errors="0" time="*" timestamp="*">
     <testcase name="Succeeds" file="gtest_xml_output_unittest_.cc" line="51" status="run" result="completed" time="*" timestamp="*" classname="SuccessfulTest"/>
   </testsuite>
 </testsuites>"""
 
 EXPECTED_SHARDED_TEST_XML = """<?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="3" failures="0" disabled="0" errors="0" time="*" timestamp="*" name="AllTests" ad_hoc_property="42">
-  <testsuite name="SuccessfulTest" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+<testsuites tests="3" failures="0" disabled="0" errors="0" time="*" timestamp="*" name="gtest_xml_output_unittest_" ad_hoc_property="42">
+  <testsuite name="gtest_xml_output_unittest_.SuccessfulTest" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="Succeeds" file="gtest_xml_output_unittest_.cc" line="51" status="run" result="completed" time="*" timestamp="*" classname="SuccessfulTest"/>
   </testsuite>
-  <testsuite name="PropertyRecordingTest" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*" SetUpTestSuite="yes" TearDownTestSuite="aye">
+  <testsuite name="gtest_xml_output_unittest_.PropertyRecordingTest" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*" SetUpTestSuite="yes" TearDownTestSuite="aye">
     <testcase name="IntValuedProperty" file="gtest_xml_output_unittest_.cc" line="123" status="run" result="completed" time="*" timestamp="*" classname="PropertyRecordingTest">
       <properties>
         <property name="key_int" value="1"/>
       </properties>
     </testcase>
   </testsuite>
-  <testsuite name="Single/ValueParamTest" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+  <testsuite name="gtest_xml_output_unittest_.Single/ValueParamTest" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+    <testcase name="HasValueParamAttribute/0" file="gtest_xml_output_unittest_.cc" line="162" value_param="33" status="run" result="completed" time="*" timestamp="*" classname="Single/ValueParamTest" />
+  </testsuite>
+</testsuites>"""
+
+EXPECTED_SHARDED_TEST_XML_MPI = """<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="3" failures="0" disabled="0" errors="0" time="*" timestamp="*" name="gtest_xml_output_unittest__np1" ad_hoc_property="42">
+  <testsuite name="gtest_xml_output_unittest__np1.SuccessfulTest" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+    <testcase name="Succeeds" file="gtest_xml_output_unittest_.cc" line="51" status="run" result="completed" time="*" timestamp="*" classname="SuccessfulTest"/>
+  </testsuite>
+  <testsuite name="gtest_xml_output_unittest__np1.PropertyRecordingTest" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*" SetUpTestSuite="yes" TearDownTestSuite="aye">
+    <testcase name="IntValuedProperty" file="gtest_xml_output_unittest_.cc" line="123" status="run" result="completed" time="*" timestamp="*" classname="PropertyRecordingTest">
+      <properties>
+        <property name="key_int" value="1"/>
+      </properties>
+    </testcase>
+  </testsuite>
+  <testsuite name="gtest_xml_output_unittest__np1.Single/ValueParamTest" tests="1" failures="0" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="HasValueParamAttribute/0" file="gtest_xml_output_unittest_.cc" line="162" value_param="33" status="run" result="completed" time="*" timestamp="*" classname="Single/ValueParamTest" />
   </testsuite>
 </testsuites>"""
 
 EXPECTED_NO_TEST_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <testsuites tests="0" failures="0" disabled="0" errors="0" time="*"
-            timestamp="*" name="AllTests">
+            timestamp="*" name="gtest_no_test_unittest">
+  <testsuite name="NonTestSuiteFailure" tests="1" failures="1" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
+    <testcase name="" status="run" result="completed" time="*" timestamp="*" classname="">
+      <failure message="gtest_no_test_unittest.cc:*&#x0A;Expected equality of these values:&#x0A;  1&#x0A;  2" type=""><![CDATA[gtest_no_test_unittest.cc:*
+Expected equality of these values:
+  1
+  2%(stack)s]]></failure>
+    </testcase>
+  </testsuite>
+</testsuites>""" % {
+    'stack': STACK_TRACE_TEMPLATE
+}
+
+EXPECTED_NO_TEST_XML_MPI = """<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="0" failures="0" disabled="0" errors="0" time="*"
+            timestamp="*" name="gtest_no_test_unittest_np1">
   <testsuite name="NonTestSuiteFailure" tests="1" failures="1" disabled="0" skipped="0" errors="0" time="*" timestamp="*">
     <testcase name="" status="run" result="completed" time="*" timestamp="*" classname="">
       <failure message="gtest_no_test_unittest.cc:*&#x0A;Expected equality of these values:&#x0A;  1&#x0A;  2" type=""><![CDATA[gtest_no_test_unittest.cc:*
@@ -250,7 +292,7 @@ class GTestXMLOutputUnitTest(gtest_xml_test_utils.GTestXMLTestCase):
       Runs a test program that generates a non-empty XML output, and
       tests that the XML output is expected.
       """
-      self._TestXmlOutput(GTEST_PROGRAM_NAME, EXPECTED_NON_EMPTY_XML, 1)
+      self._TestXmlOutput(GTEST_PROGRAM_NAME, EXPECTED_NON_EMPTY_XML, EXPECTED_NON_EMPTY_XML_MPI, 1)
 
   def testNoTestXmlOutput(self):
     """Verifies XML output for a Google Test binary without actual tests.
@@ -259,7 +301,7 @@ class GTestXMLOutputUnitTest(gtest_xml_test_utils.GTestXMLTestCase):
     and tests that the XML output is expected.
     """
 
-    self._TestXmlOutput('gtest_no_test_unittest', EXPECTED_NO_TEST_XML, 0)
+    self._TestXmlOutput('gtest_no_test_unittest', EXPECTED_NO_TEST_XML, EXPECTED_NO_TEST_XML_MPI, 0)
 
   def testTimestampValue(self):
     """Checks whether the timestamp attribute in the XML output is valid.
@@ -345,7 +387,7 @@ class GTestXMLOutputUnitTest(gtest_xml_test_utils.GTestXMLTestCase):
     non-selected tests do not show up in the XML output.
     """
 
-    self._TestXmlOutput(GTEST_PROGRAM_NAME, EXPECTED_FILTERED_TEST_XML, 0,
+    self._TestXmlOutput(GTEST_PROGRAM_NAME, EXPECTED_FILTERED_TEST_XML, EXPECTED_FILTERED_TEST_XML_MPI, 0,
                         extra_args=['%s=SuccessfulTest.*' % GTEST_FILTER_FLAG])
 
   def testShardedTestXmlOutput(self):
@@ -358,6 +400,7 @@ class GTestXMLOutputUnitTest(gtest_xml_test_utils.GTestXMLTestCase):
     self._TestXmlOutput(
         GTEST_PROGRAM_NAME,
         EXPECTED_SHARDED_TEST_XML,
+        EXPECTED_SHARDED_TEST_XML_MPI,
         0,
         extra_env={SHARD_INDEX_ENV_VAR: '0',
                    TOTAL_SHARDS_ENV_VAR: '10'})
@@ -391,7 +434,7 @@ class GTestXMLOutputUnitTest(gtest_xml_test_utils.GTestXMLTestCase):
     actual = minidom.parse(xml_path)
     return actual
 
-  def _TestXmlOutput(self, gtest_prog_name, expected_xml,
+  def _TestXmlOutput(self, gtest_prog_name, expected_xml, expected_xml_alt,
                      expected_exit_code, extra_args=None, extra_env=None):
     """
     Asserts that the XML document generated by running the program
@@ -403,9 +446,15 @@ class GTestXMLOutputUnitTest(gtest_xml_test_utils.GTestXMLTestCase):
     actual = self._GetXmlOutput(gtest_prog_name, extra_args or [],
                                 extra_env or {}, expected_exit_code)
     expected = minidom.parseString(expected_xml)
+    expected_alt = minidom.parseString(expected_xml_alt)
     self.NormalizeXml(actual.documentElement)
-    self.AssertEquivalentNodes(expected.documentElement,
-                               actual.documentElement)
+    try:
+        self.AssertEquivalentNodes(expected.documentElement,
+                                   actual.documentElement)
+    except AssertionError:
+        self.AssertEquivalentNodes(expected_alt.documentElement,
+                                   actual.documentElement)
+
     expected.unlink()
     actual.unlink()
 
