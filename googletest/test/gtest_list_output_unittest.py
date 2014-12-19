@@ -47,31 +47,31 @@ GTEST_OUTPUT_FLAG = '--gtest_output'
 
 EXPECTED_XML = """<\?xml version="1.0" encoding="UTF-8"\?>
 <testsuites tests="16" name="AllTests">
-  <testsuite name="FooTest" tests="2">
+  <testsuite name="gtest_list_output_unittest_.*.FooTest" tests="2">
     <testcase name="Test1" file=".*gtest_list_output_unittest_.cc" line="43" />
     <testcase name="Test2" file=".*gtest_list_output_unittest_.cc" line="45" />
   </testsuite>
-  <testsuite name="FooTestFixture" tests="2">
+  <testsuite name="gtest_list_output_unittest_.*.FooTestFixture" tests="2">
     <testcase name="Test3" file=".*gtest_list_output_unittest_.cc" line="48" />
     <testcase name="Test4" file=".*gtest_list_output_unittest_.cc" line="49" />
   </testsuite>
-  <testsuite name="TypedTest/0" tests="2">
+  <testsuite name="gtest_list_output_unittest_.*.TypedTest/0" tests="2">
     <testcase name="Test7" type_param="int" file=".*gtest_list_output_unittest_.cc" line="60" />
     <testcase name="Test8" type_param="int" file=".*gtest_list_output_unittest_.cc" line="61" />
   </testsuite>
-  <testsuite name="TypedTest/1" tests="2">
+  <testsuite name="gtest_list_output_unittest_.*.TypedTest/1" tests="2">
     <testcase name="Test7" type_param="bool" file=".*gtest_list_output_unittest_.cc" line="60" />
     <testcase name="Test8" type_param="bool" file=".*gtest_list_output_unittest_.cc" line="61" />
   </testsuite>
-  <testsuite name="Single/TypeParameterizedTestSuite/0" tests="2">
+  <testsuite name="gtest_list_output_unittest_.*.Single/TypeParameterizedTestSuite/0" tests="2">
     <testcase name="Test9" type_param="int" file=".*gtest_list_output_unittest_.cc" line="66" />
     <testcase name="Test10" type_param="int" file=".*gtest_list_output_unittest_.cc" line="67" />
   </testsuite>
-  <testsuite name="Single/TypeParameterizedTestSuite/1" tests="2">
+  <testsuite name="gtest_list_output_unittest_.*.Single/TypeParameterizedTestSuite/1" tests="2">
     <testcase name="Test9" type_param="bool" file=".*gtest_list_output_unittest_.cc" line="66" />
     <testcase name="Test10" type_param="bool" file=".*gtest_list_output_unittest_.cc" line="67" />
   </testsuite>
-  <testsuite name="ValueParam/ValueParamTest" tests="4">
+  <testsuite name="gtest_list_output_unittest_.*.ValueParam/ValueParamTest" tests="4">
     <testcase name="Test5/0" value_param="33" file=".*gtest_list_output_unittest_.cc" line="52" />
     <testcase name="Test5/1" value_param="42" file=".*gtest_list_output_unittest_.cc" line="52" />
     <testcase name="Test6/0" value_param="33" file=".*gtest_list_output_unittest_.cc" line="53" />
