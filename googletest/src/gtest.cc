@@ -2191,6 +2191,13 @@ std::string String::FormatIntWidthN(int value, int width) {
   return ss.str();
 }
 
+// Formats an int value as "%d".
+std::string String::FormatInt(int value) {
+  std::stringstream ss;
+  ss << value;
+  return ss.str();
+}
+
 // Formats an int value as "%X".
 std::string String::FormatHexUInt32(uint32_t value) {
   std::stringstream ss;
@@ -4125,9 +4132,13 @@ std::string XmlUnitTestResultPrinter::RemoveInvalidXmlCharacters(
 //
 // This is how Google Test concepts map to the DTD:
 //
-// <testsuites name="AllTests">        <-- corresponds to a UnitTest object
-//   <testsuite name="testcase-name">  <-- corresponds to a TestSuite object
-//     <testcase name="test-name">     <-- corresponds to a TestInfo object
+// <testsuites name="exec-name(_np<X>)">                    <-- corresponds to a UnitTest object 
+//                                                          <-- (uses argv[0] as executable-name and
+//                                                          <-- adds _np<X> if GTEST_HAS_MPI where
+//                                                          <-- X is the number of MPI processes
+//   <testsuite name="testcase-name">                       <-- corresponds to a TestSuite object
+//   <testsuite name="exec-name(_np<X>).testsuite-name">    <-- corresponds to a TestCase object
+//     <testcase name="test-name">                          <-- corresponds to a TestInfo object
 //       <failure message="...">...</failure>
 //       <failure message="...">...</failure>
 //       <failure message="...">...</failure>
@@ -4352,9 +4363,16 @@ void XmlUnitTestResultPrinter::OutputXmlTestResult(::std::ostream* stream,
 // Prints an XML representation of a TestSuite object
 void XmlUnitTestResultPrinter::PrintXmlTestSuite(std::ostream* stream,
                                                  const TestSuite& test_suite) {
+#if GTEST_HAS_MPI
+  int nprocs = 0;
+  MPI_Comm_size(GTEST_MPI_COMM_WORLD, &nprocs);
+  const std::string full_test_suite_name = GetCurrentExecutableName().string()+"_np"+String::FormatInt(nprocs)+"."+test_suite.name();
+#else
+  const std::string full_test_suite_name = GetCurrentExecutableName().string()+"."+test_suite.name();
+#endif
   const std::string kTestsuite = "testsuite";
   *stream << "  <" << kTestsuite;
-  OutputXmlAttribute(stream, kTestsuite, "name", test_suite.name());
+  OutputXmlAttribute(stream, kTestsuite, "name", full_test_suite_name.c_str());
   OutputXmlAttribute(stream, kTestsuite, "tests",
                      StreamableToString(test_suite.reportable_test_count()));
   if (!GTEST_FLAG_GET(list_tests)) {
@@ -4410,8 +4428,15 @@ void XmlUnitTestResultPrinter::PrintXmlUnitTest(std::ostream* stream,
                        StreamableToString(unit_test.random_seed()));
   }
   *stream << TestPropertiesAsXmlAttributes(unit_test.ad_hoc_test_result());
+#if GTEST_HAS_MPI
+  int nprocs = 0;
+  MPI_Comm_size(GTEST_MPI_COMM_WORLD, &nprocs);
+  const std::string test_suites_name = GetCurrentExecutableName().string()+"_np"+String::FormatInt(nprocs);
+#else
+  const std::string test_suites_name = GetCurrentExecutableName().string();
+#endif
 
-  OutputXmlAttribute(stream, kTestsuites, "name", "AllTests");
+  OutputXmlAttribute(stream, kTestsuites, "name", test_suites_name.c_str());
   *stream << ">\n";
 
   for (int i = 0; i < unit_test.total_test_suite_count(); ++i) {
@@ -5674,6 +5699,14 @@ void UnitTestImpl::SuppressTestEventsIfInSubprocess() {
 // UnitTestOptions. Must not be called before InitGoogleTest.
 void UnitTestImpl::ConfigureXmlOutput() {
   const std::string& output_format = UnitTestOptions::GetOutputFormat();
+#if GTEST_HAS_MPI
+  int rank = 0;
+  if( MPI_Comm_rank(GTEST_MPI_COMM_WORLD, &rank) != MPI_SUCCESS) {
+    GTEST_LOG_(ERROR)
+      << "Error MPI_Comm_rank should return MPI_SUCCESS.";
+  }
+  if( rank != 0 ) return;
+#endif
 #if GTEST_HAS_FILE_SYSTEM
   if (output_format == "xml") {
     listeners()->SetDefaultXmlGenerator(new XmlUnitTestResultPrinter(
@@ -5736,9 +5769,25 @@ void UnitTestImpl::PostFlagParsingInit() {
     // RUN_ALL_TESTS.
     RegisterParameterizedTests();
 
-    // Configures listeners for XML output. This makes it possible for users
-    // to shut down the default XML output before invoking RUN_ALL_TESTS.
-    ConfigureXmlOutput();
+    int rank = 0;
+#if GTEST_HAS_MPI
+    if( MPI_Comm_rank(GTEST_MPI_COMM_WORLD, &rank) != MPI_SUCCESS) {
+      GTEST_LOG_(ERROR)
+        << "Error MPI_Comm_rank should return MPI_SUCCESS.";
+    }
+#endif
+    if( rank == 0 ) {
+      // Configures listeners for default output. Initializing it here
+      // allows us to check if this is the MPI root process to prevent
+      // duplicate output.
+      listeners()->SetDefaultResultPrinter(new PrettyUnitTestResultPrinter);
+
+      // Configures listeners for XML output. This makes it possible for users
+      // to shut down the default XML output before invoking RUN_ALL_TESTS.
+      ConfigureXmlOutput();
+    } else {
+      listeners()->SetDefaultResultPrinter(NULL);
+    }
 
     if (GTEST_FLAG_GET(brief)) {
       listeners()->SetDefaultResultPrinter(new BriefUnitTestResultPrinter);
