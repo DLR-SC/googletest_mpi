@@ -41,8 +41,22 @@ GTEST_OUTPUT_1_TEST = "gtest_xml_outfile1_test_"
 GTEST_OUTPUT_2_TEST = "gtest_xml_outfile2_test_"
 
 EXPECTED_XML_1 = """<?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="1" failures="0" disabled="0" errors="0" time="*" timestamp="*" name="AllTests">
-  <testsuite name="PropertyOne" tests="1" failures="0" disabled="0" errors="0" time="*" timestamp="*">
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="*" timestamp="*" name="gtest_xml_outfile1_test_">
+  <testsuite name="gtest_xml_outfile1_test__np1.PropertyOne" tests="1" failures="0" skipped="0" disabled="0" errors="0" time="*" timestamp="*">
+    <testcase name="TestSomeProperties" status="run" result="completed" time="*" timestamp="*" classname="PropertyOne">
+      <properties>
+        <property name="SetUpProp" value="1"/>
+        <property name="TestSomeProperty" value="1"/>
+        <property name="TearDownProp" value="1"/>
+      </properties>
+    </testcase>
+  </testsuite>
+</testsuites>
+"""
+
+EXPECTED_XML_1_MPI = """<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="*" timestamp="*" name="gtest_xml_outfile1_test__np1">
+  <testsuite name="gtest_xml_outfile1_test__np1.PropertyOne" tests="1" failures="0" disabled="0" errors="0" time="*" timestamp="*">
     <testcase name="TestSomeProperties" status="run" result="completed" time="*" timestamp="*" classname="PropertyOne">
       <properties>
         <property name="SetUpProp" value="1"/>
@@ -55,8 +69,22 @@ EXPECTED_XML_1 = """<?xml version="1.0" encoding="UTF-8"?>
 """
 
 EXPECTED_XML_2 = """<?xml version="1.0" encoding="UTF-8"?>
-<testsuites tests="1" failures="0" disabled="0" errors="0" time="*" timestamp="*" name="AllTests">
-  <testsuite name="PropertyTwo" tests="1" failures="0" disabled="0" errors="0" time="*" timestamp="*">
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="*" timestamp="*" name="gtest_xml_outfile2_test_">
+  <testsuite name="gtest_xml_outfile2_test__np1.PropertyTwo" tests="1" failures="0" skipped="0" disabled="0" errors="0" time="*" timestamp="*">
+    <testcase name="TestSomeProperties" status="run" result="completed" time="*" timestamp="*" classname="PropertyTwo">
+      <properties>
+        <property name="SetUpProp" value="2"/>
+        <property name="TestSomeProperty" value="2"/>
+        <property name="TearDownProp" value="2"/>
+      </properties>
+    </testcase>
+  </testsuite>
+</testsuites>
+"""
+
+EXPECTED_XML_2_MPI = """<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="1" failures="0" disabled="0" errors="0" time="*" timestamp="*" name="gtest_xml_outfile2_test__np1">
+  <testsuite name="gtest_xml_outfile2_test__np1.PropertyTwo" tests="1" failures="0" disabled="0" errors="0" time="*" timestamp="*">
     <testcase name="TestSomeProperties" status="run" result="completed" time="*" timestamp="*" classname="PropertyTwo">
       <properties>
         <property name="SetUpProp" value="2"/>
@@ -98,12 +126,12 @@ class GTestXMLOutFilesTest(gtest_xml_test_utils.GTestXMLTestCase):
       pass
 
   def testOutfile1(self):
-    self._TestOutFile(GTEST_OUTPUT_1_TEST, EXPECTED_XML_1)
+    self._TestOutFile(GTEST_OUTPUT_1_TEST, EXPECTED_XML_1, EXPECTED_XML_1_MPI)
 
   def testOutfile2(self):
-    self._TestOutFile(GTEST_OUTPUT_2_TEST, EXPECTED_XML_2)
+    self._TestOutFile(GTEST_OUTPUT_2_TEST, EXPECTED_XML_2, EXPECTED_XML_2_MPI)
 
-  def _TestOutFile(self, test_name, expected_xml):
+  def _TestOutFile(self, test_name, expected_xml, expected_xml_alt):
     gtest_prog_path = gtest_test_utils.GetTestExecutablePath(test_name)
     command = [gtest_prog_path, "--gtest_output=xml:%s" % self.output_dir_]
     p = gtest_test_utils.Subprocess(command,
@@ -119,13 +147,19 @@ class GTestXMLOutFilesTest(gtest_xml_test_utils.GTestXMLTestCase):
                  output_file1)
 
     expected = minidom.parseString(expected_xml)
+    expected_alt = minidom.parseString(expected_xml_alt)
     if os.path.isfile(output_file1):
       actual = minidom.parse(output_file1)
     else:
       actual = minidom.parse(output_file2)
     self.NormalizeXml(actual.documentElement)
-    self.AssertEquivalentNodes(expected.documentElement,
-                               actual.documentElement)
+    try:
+        self.AssertEquivalentNodes(expected.documentElement,
+                                   actual.documentElement)
+    except AssertionError:
+        self.AssertEquivalentNodes(expected_alt.documentElement,
+                                   actual.documentElement)
+
     expected.unlink()
     actual.unlink()
 
