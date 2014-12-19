@@ -656,7 +656,7 @@ void ThreadLocalRegistry::OnThreadLocalDestroyed(
 #endif  // GTEST_IS_THREADSAFE && GTEST_OS_WINDOWS
 
 
-#ifdef GTEST_HAS_MPI
+#if GTEST_HAS_MPI
 
 // MPI communicator used in googletest
 MPI_Comm GTEST_MPI_COMM_WORLD = MPI_COMM_WORLD;
@@ -1236,7 +1236,7 @@ std::string ReadEntireFile(FILE* file) {
   return content;
 }
 
-#if GTEST_HAS_DEATH_TEST
+#if GTEST_HAS_DEATH_TEST || GTEST_HAS_MPI
 static const std::vector<std::string>* g_injected_test_argvs =
     nullptr;  // Owned.
 
@@ -1261,7 +1261,7 @@ void ClearInjectableArgvs() {
   delete g_injected_test_argvs;
   g_injected_test_argvs = nullptr;
 }
-#endif  // GTEST_HAS_DEATH_TEST
+#endif  // GTEST_HAS_DEATH_TEST || GTEST_HAS_MPI
 
 #if GTEST_OS_WINDOWS_MOBILE
 namespace posix {

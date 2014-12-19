@@ -59,7 +59,7 @@ void AssertionResult::swap(AssertionResult& other) {
 // checks that all MPI processes have the same v
 bool AssertionResult::boolIdenticalOnMPIprocs(bool v)
 {
-#ifdef GTEST_HAS_MPI
+#if GTEST_HAS_MPI
   int localSuccess = v;
   int globalAndV, globalOrV;
   bool mpiErr = false;
@@ -75,6 +75,8 @@ bool AssertionResult::boolIdenticalOnMPIprocs(bool v)
   {
     return globalAndV == globalOrV;
   }
+#else
+  return true;
 #endif
 }
 

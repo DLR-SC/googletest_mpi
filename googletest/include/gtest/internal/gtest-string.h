@@ -154,6 +154,9 @@ class GTEST_API_ String {
   // Formats an int value to given width with leading zeros.
   static std::string FormatIntWidthN(int value, int width);
 
+  // Formats an int value as "%d".
+  static std::string FormatInt(int value);
+
   // Formats an int value as "%X".
   static std::string FormatHexInt(int value);
 

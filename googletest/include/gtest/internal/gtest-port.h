@@ -1161,7 +1161,7 @@ GTEST_API_ std::string ReadEntireFile(FILE* file);
 // All command line arguments.
 GTEST_API_ std::vector<std::string> GetArgvs();
 
-#if GTEST_HAS_DEATH_TEST
+#if GTEST_HAS_DEATH_TEST || GTEST_HAS_MPI
 
 std::vector<std::string> GetInjectableArgvs();
 // Deprecated: pass the args vector by value instead.
@@ -1169,7 +1169,7 @@ void SetInjectableArgvs(const std::vector<std::string>* new_argvs);
 void SetInjectableArgvs(const std::vector<std::string>& new_argvs);
 void ClearInjectableArgvs();
 
-#endif  // GTEST_HAS_DEATH_TEST
+#endif  // GTEST_HAS_DEATH_TEST || GTEST_HAS_MPI
 
 // Defines synchronization primitives.
 #if GTEST_IS_THREADSAFE
@@ -1889,7 +1889,7 @@ class GTEST_API_ ThreadLocal {
 #endif  // GTEST_IS_THREADSAFE
 
 
-#ifdef GTEST_HAS_MPI
+#if GTEST_HAS_MPI
 
 // Forward-declares the MPI communicator
 extern MPI_Comm GTEST_MPI_COMM_WORLD;
