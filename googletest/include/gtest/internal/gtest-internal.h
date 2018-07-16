@@ -207,7 +207,7 @@ GTEST_API_ AssertionResult EqFailure(const char* expected_expression,
                                      const std::string& expected_value,
                                      const std::string& actual_value,
                                      bool ignoring_case,
-                                     bool global = true);
+                                     bool global = false);
 
 // Constructs a failure message for Boolean assertions such as EXPECT_TRUE.
 GTEST_API_ std::string GetBoolAssertionFailureMessage(
@@ -1509,6 +1509,20 @@ class NeverThrown {
     fail(::testing::internal::GetBoolAssertionFailureMessage(         \
              gtest_ar_, text, #actual, #expected)                     \
              .c_str())
+
+#if GTEST_HAS_MPI
+// Implements MPI synchronized Boolean test assertions such as EXPECT_TRUE. expression can be
+// either a boolean expression or an AssertionResult. text is a textual
+// represenation of expression as it was passed into the EXPECT_TRUE.
+#define GTEST_TEST_BOOLEAN_MPI_(expression, text, actual, expected, fail) \
+  GTEST_AMBIGUOUS_ELSE_BLOCKER_                                           \
+  if (const ::testing::AssertionResult gtest_ar_ =                        \
+      ::testing::AssertionResult(expression, true))                       \
+    ;                                                                     \
+  else                                                                    \
+    fail(::testing::internal::GetBoolAssertionFailureMessage(             \
+        gtest_ar_, text, #actual, #expected).c_str())
+#endif
 
 #define GTEST_TEST_NO_FATAL_FAILURE_(statement, fail)                          \
   GTEST_AMBIGUOUS_ELSE_BLOCKER_                                                \
