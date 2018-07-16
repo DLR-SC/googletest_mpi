@@ -48,7 +48,8 @@ GTEST_API_ int main(int argc, char **argv) {
 #if GTEST_HAS_MPI
   if( MPI_Init(&argc, &argv) != MPI_SUCCESS )
   {
-    std::cout << "Error calling MPI_Init!\n";
+    GTEST_LOG_(ERROR) << "Error calling MPI_Init!\n";
+
     return 1;
   }
 #endif
@@ -58,7 +59,7 @@ GTEST_API_ int main(int argc, char **argv) {
 #if GTEST_HAS_MPI
   if( MPI_Finalize() != MPI_SUCCESS )
   {
-    std::cout << "Error calling MPI_Finalize!\n";
+    GTEST_LOG_(ERROR) << "Error calling MPI_Finalize!\n";
     return 1;
   }
 #endif

@@ -1003,6 +1003,20 @@ AssertionResult::AssertionResult(const AssertionResult& other)
                    ? new ::std::string(*other.message_)
                    : static_cast< ::std::string*>(nullptr)) {}
 
+#if GTEST_HAS_MPI
+// AssertionResult constructors with possibility of synchronized result.
+// Used in EXPECT_TRUE/FALSE_MPI(assertion_result).
+AssertionResult::AssertionResult(const AssertionResult& other, bool global)
+    : success_(other.success_), globalResultsDiffer_(other.globalResultsDiffer_),
+      message_(other.message_.get() != NULL ?
+               new ::std::string(*other.message_) :
+               static_cast< ::std::string*>(NULL)) {
+  // Synchronize the Assertion result
+        if( global )
+          globalResultsDiffer_ = !boolIdenticalOnMPIprocs(success_);
+}
+#endif
+
 // Swaps two AssertionResults.
 void AssertionResult::swap(AssertionResult& other) {
   using std::swap;
@@ -1011,10 +1025,10 @@ void AssertionResult::swap(AssertionResult& other) {
   swap(message_, other.message_);
 }
 
+#if GTEST_HAS_MPI
 // checks that all MPI processes have the same v
 bool AssertionResult::boolIdenticalOnMPIprocs(bool v)
 {
-#if GTEST_HAS_MPI
   int localSuccess = v;
   int globalAndV, globalOrV;
   bool mpiErr = false;
@@ -1030,10 +1044,8 @@ bool AssertionResult::boolIdenticalOnMPIprocs(bool v)
   {
     return globalAndV == globalOrV;
   }
-#else
-  return true;
-#endif
 }
+#endif
 
 // Returns the assertion's negation. Used with EXPECT/ASSERT_FALSE.
 AssertionResult AssertionResult::operator!() const {
@@ -1630,7 +1642,7 @@ AssertionResult IsSubstringImpl(
     bool expected_to_be_substring,
     const char* needle_expr, const char* haystack_expr,
     const StringType& needle, const StringType& haystack,
-    bool global = true) {
+    bool global = false) {
   if (IsSubstringPred(needle, haystack) == expected_to_be_substring)
     return AssertionSuccess(global);
 
