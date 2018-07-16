@@ -143,6 +143,12 @@ class GTEST_API_ [[nodiscard]] AssertionResult {
   // Used in EXPECT_TRUE/FALSE(assertion_result).
   AssertionResult(const AssertionResult& other);
 
+#if GTEST_HAS_MPI
+  // Copy constructor with possibility of synchronized result.
+  // Used in EXPECT_TRUE/FALSE_MPI(assertion_result).
+  AssertionResult(const AssertionResult& other, bool global);
+#endif
+
 // C4800 is a level 3 warning in Visual Studio 2015 and earlier.
 // This warning is not emitted in Visual Studio 2017.
 // This warning is off by default starting in Visual Studio 2019 but can be
@@ -160,7 +166,7 @@ class GTEST_API_ [[nodiscard]] AssertionResult {
   // we want AssertionResult's copy constructor to be used.
   template <typename T>
   explicit AssertionResult(
-      const T& success, bool global = true,
+      const T& success, bool global = false,
       typename std::enable_if<
           !std::is_convertible<T, AssertionResult>::value>::type*
       /*enabler*/
