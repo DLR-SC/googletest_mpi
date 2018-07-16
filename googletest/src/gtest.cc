@@ -1770,7 +1770,7 @@ AssertionResult IsSubstringImpl(bool expected_to_be_substring,
                                 const char* needle_expr,
                                 const char* haystack_expr,
                                 const StringType& needle,
-                                const StringType& haystack, bool global = true) {
+                                const StringType& haystack, bool global = false) {
   if (IsSubstringPred(needle, haystack) == expected_to_be_substring)
     return AssertionSuccess(global);
 

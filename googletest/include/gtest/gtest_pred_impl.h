@@ -117,7 +117,7 @@ AssertionResult AssertPred1Helper(const char* pred_text, const char* e1,
 template <typename Pred, typename T1, typename T2>
 AssertionResult AssertPred2Helper(const char* pred_text, const char* e1,
                                   const char* e2, Pred pred, const T1& v1,
-                                  const T2& v2, bool global = true) {
+                                  const T2& v2, bool global = false) {
   if (pred(v1, v2)) return AssertionSuccess(global);
 
   return AssertionFailure(global)
@@ -148,6 +148,20 @@ AssertionResult AssertPred2Helper(const char* pred_text, const char* e1,
   GTEST_PRED_FORMAT2_(pred_format, v1, v2, GTEST_FATAL_FAILURE_)
 #define ASSERT_PRED2(pred, v1, v2) \
   GTEST_PRED2_(pred, v1, v2, GTEST_FATAL_FAILURE_)
+
+#if GTEST_HAS_MPI
+// Internal macro for implementing {EXPECT|ASSERT}_PRED_FORMAT2_MPI.
+// Don't use this in your code.
+#define GTEST_PRED_FORMAT2_MPI_(pred_format_mpi, v1, v2, on_failure)\
+  GTEST_ASSERT_(pred_format_mpi(#v1, #v2, v1, v2, true), \
+                on_failure)
+// Binary predicate assertion macros.
+#define EXPECT_PRED_FORMAT2_MPI(pred_format_mpi, v1, v2) \
+  GTEST_PRED_FORMAT2_MPI_(pred_format_mpi, v1, v2, GTEST_NONFATAL_FAILURE_)
+#define ASSERT_PRED_FORMAT2_MPI(pred_format_mpi, v1, v2) \
+  GTEST_PRED_FORMAT2_MPI_(pred_format_mpi, v1, v2, GTEST_FATAL_FAILURE_)
+#endif
+
 
 // Helper function for implementing {EXPECT|ASSERT}_PRED3.  Don't use
 // this in your code.
