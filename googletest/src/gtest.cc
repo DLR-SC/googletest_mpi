@@ -1630,7 +1630,7 @@ std::vector<std::string> SplitEscapedString(const std::string& str) {
 AssertionResult EqFailure(const char* lhs_expression,
                           const char* rhs_expression,
                           const std::string& lhs_value,
-                          const std::string& rhs_value, bool ignoring_case) {
+                          const std::string& rhs_value, bool ignoring_case, bool global) {
   Message msg;
   msg << "Expected equality of these values:";
   msg << "\n  " << lhs_expression;
@@ -1655,7 +1655,7 @@ AssertionResult EqFailure(const char* lhs_expression,
     }
   }
 
-  return AssertionFailure() << msg;
+  return AssertionFailure(global) << msg;
 }
 
 // Constructs a failure message for Boolean assertions such as EXPECT_TRUE.
@@ -1780,35 +1780,35 @@ namespace internal {
 // The helper function for {ASSERT|EXPECT}_STREQ.
 AssertionResult CmpHelperSTREQ(const char* lhs_expression,
                                const char* rhs_expression, const char* lhs,
-                               const char* rhs) {
+                               const char* rhs, bool global) {
   if (String::CStringEquals(lhs, rhs)) {
-    return AssertionSuccess();
+    return AssertionSuccess(global);
   }
 
   return EqFailure(lhs_expression, rhs_expression, PrintToString(lhs),
-                   PrintToString(rhs), false);
+                   PrintToString(rhs), false, global);
 }
 
 // The helper function for {ASSERT|EXPECT}_STRCASEEQ.
 AssertionResult CmpHelperSTRCASEEQ(const char* lhs_expression,
                                    const char* rhs_expression, const char* lhs,
-                                   const char* rhs) {
+                                   const char* rhs, bool global) {
   if (String::CaseInsensitiveCStringEquals(lhs, rhs)) {
-    return AssertionSuccess();
+    return AssertionSuccess(global);
   }
 
   return EqFailure(lhs_expression, rhs_expression, PrintToString(lhs),
-                   PrintToString(rhs), true);
+                   PrintToString(rhs), true, global);
 }
 
 // The helper function for {ASSERT|EXPECT}_STRNE.
 AssertionResult CmpHelperSTRNE(const char* s1_expression,
                                const char* s2_expression, const char* s1,
-                               const char* s2) {
+                               const char* s2, bool global) {
   if (!String::CStringEquals(s1, s2)) {
-    return AssertionSuccess();
+    return AssertionSuccess(global);
   } else {
-    return AssertionFailure()
+    return AssertionFailure(global)
            << "Expected: (" << s1_expression << ") != (" << s2_expression
            << "), actual: \"" << s1 << "\" vs \"" << s2 << "\"";
   }
@@ -1817,11 +1817,11 @@ AssertionResult CmpHelperSTRNE(const char* s1_expression,
 // The helper function for {ASSERT|EXPECT}_STRCASENE.
 AssertionResult CmpHelperSTRCASENE(const char* s1_expression,
                                    const char* s2_expression, const char* s1,
-                                   const char* s2) {
+                                   const char* s2, bool global) {
   if (!String::CaseInsensitiveCStringEquals(s1, s2)) {
-    return AssertionSuccess();
+    return AssertionSuccess(global);
   } else {
-    return AssertionFailure()
+    return AssertionFailure(global)
            << "Expected: (" << s1_expression << ") != (" << s2_expression
            << ") (ignoring case), actual: \"" << s1 << "\" vs \"" << s2 << "\"";
   }
@@ -1864,13 +1864,13 @@ AssertionResult IsSubstringImpl(bool expected_to_be_substring,
                                 const char* needle_expr,
                                 const char* haystack_expr,
                                 const StringType& needle,
-                                const StringType& haystack) {
+                                const StringType& haystack, bool global = true) {
   if (IsSubstringPred(needle, haystack) == expected_to_be_substring)
-    return AssertionSuccess();
+    return AssertionSuccess(global);
 
   const bool is_wide_string = sizeof(needle[0]) > 1;
   const char* const begin_string_quote = is_wide_string ? "L\"" : "\"";
-  return AssertionFailure()
+  return AssertionFailure(global)
          << "Value of: " << needle_expr << "\n"
          << "  Actual: " << begin_string_quote << needle << "\"\n"
          << "Expected: " << (expected_to_be_substring ? "" : "not ")
@@ -1885,52 +1885,52 @@ AssertionResult IsSubstringImpl(bool expected_to_be_substring,
 // only), and return an appropriate error message when they fail.
 
 AssertionResult IsSubstring(const char* needle_expr, const char* haystack_expr,
-                            const char* needle, const char* haystack) {
-  return IsSubstringImpl(true, needle_expr, haystack_expr, needle, haystack);
+                            const char* needle, const char* haystack, bool global) {
+  return IsSubstringImpl(true, needle_expr, haystack_expr, needle, haystack, global);
 }
 
 AssertionResult IsSubstring(const char* needle_expr, const char* haystack_expr,
-                            const wchar_t* needle, const wchar_t* haystack) {
-  return IsSubstringImpl(true, needle_expr, haystack_expr, needle, haystack);
+                            const wchar_t* needle, const wchar_t* haystack, bool global) {
+  return IsSubstringImpl(true, needle_expr, haystack_expr, needle, haystack, global);
 }
 
 AssertionResult IsNotSubstring(const char* needle_expr,
                                const char* haystack_expr, const char* needle,
-                               const char* haystack) {
-  return IsSubstringImpl(false, needle_expr, haystack_expr, needle, haystack);
+                               const char* haystack, bool global) {
+  return IsSubstringImpl(false, needle_expr, haystack_expr, needle, haystack, global);
 }
 
 AssertionResult IsNotSubstring(const char* needle_expr,
                                const char* haystack_expr, const wchar_t* needle,
-                               const wchar_t* haystack) {
-  return IsSubstringImpl(false, needle_expr, haystack_expr, needle, haystack);
+                               const wchar_t* haystack, bool global) {
+  return IsSubstringImpl(false, needle_expr, haystack_expr, needle, haystack, global);
 }
 
 AssertionResult IsSubstring(const char* needle_expr, const char* haystack_expr,
                             const ::std::string& needle,
-                            const ::std::string& haystack) {
-  return IsSubstringImpl(true, needle_expr, haystack_expr, needle, haystack);
+                            const ::std::string& haystack, bool global) {
+  return IsSubstringImpl(true, needle_expr, haystack_expr, needle, haystack, global);
 }
 
 AssertionResult IsNotSubstring(const char* needle_expr,
                                const char* haystack_expr,
                                const ::std::string& needle,
-                               const ::std::string& haystack) {
-  return IsSubstringImpl(false, needle_expr, haystack_expr, needle, haystack);
+                               const ::std::string& haystack, bool global) {
+  return IsSubstringImpl(false, needle_expr, haystack_expr, needle, haystack, global);
 }
 
 #if GTEST_HAS_STD_WSTRING
 AssertionResult IsSubstring(const char* needle_expr, const char* haystack_expr,
                             const ::std::wstring& needle,
-                            const ::std::wstring& haystack) {
-  return IsSubstringImpl(true, needle_expr, haystack_expr, needle, haystack);
+                            const ::std::wstring& haystack, bool global) {
+  return IsSubstringImpl(true, needle_expr, haystack_expr, needle, haystack, global);
 }
 
 AssertionResult IsNotSubstring(const char* needle_expr,
                                const char* haystack_expr,
                                const ::std::wstring& needle,
-                               const ::std::wstring& haystack) {
-  return IsSubstringImpl(false, needle_expr, haystack_expr, needle, haystack);
+                               const ::std::wstring& haystack, bool global) {
+  return IsSubstringImpl(false, needle_expr, haystack_expr, needle, haystack, global);
 }
 #endif  // GTEST_HAS_STD_WSTRING
 
@@ -2152,24 +2152,24 @@ bool String::WideCStringEquals(const wchar_t* lhs, const wchar_t* rhs) {
 // Helper function for *_STREQ on wide strings.
 AssertionResult CmpHelperSTREQ(const char* lhs_expression,
                                const char* rhs_expression, const wchar_t* lhs,
-                               const wchar_t* rhs) {
+                               const wchar_t* rhs, bool global) {
   if (String::WideCStringEquals(lhs, rhs)) {
-    return AssertionSuccess();
+    return AssertionSuccess(global);
   }
 
   return EqFailure(lhs_expression, rhs_expression, PrintToString(lhs),
-                   PrintToString(rhs), false);
+                   PrintToString(rhs), false, global);
 }
 
 // Helper function for *_STRNE on wide strings.
 AssertionResult CmpHelperSTRNE(const char* s1_expression,
                                const char* s2_expression, const wchar_t* s1,
-                               const wchar_t* s2) {
+                               const wchar_t* s2, bool global) {
   if (!String::WideCStringEquals(s1, s2)) {
-    return AssertionSuccess();
+    return AssertionSuccess(global);
   }
 
-  return AssertionFailure()
+  return AssertionFailure(global)
          << "Expected: (" << s1_expression << ") != (" << s2_expression
          << "), actual: " << PrintToString(s1) << " vs " << PrintToString(s2);
 }
@@ -2303,7 +2303,11 @@ std::string AppendUserMessage(const std::string& gtest_msg,
 
 // Creates an empty TestResult.
 TestResult::TestResult()
-    : death_test_count_(0), start_timestamp_(0), elapsed_time_(0) {}
+    :
+#if GTEST_HAS_MPI
+      SomeProcessFailed (false),
+#endif
+    death_test_count_(0), start_timestamp_(0), elapsed_time_(0) {}
 
 // D'tor.
 TestResult::~TestResult() = default;
@@ -2466,8 +2470,38 @@ bool TestResult::Skipped() const {
   return !Failed() && CountIf(test_part_results_, TestPartSkipped) > 0;
 }
 
+#if GTEST_HAS_MPI
+bool TestResult::Synchronize() {
+  // Communicate the result across all MPI processes
+  int local_failed_int = Failed () ? 1 : 0;
+  int global_failed_int;
+  int mpirank; MPI_Comm_rank (internal::GTEST_MPI_COMM_WORLD, &mpirank);
+  bool mpiErr;
+  // We perform an Allreduce with the logical OR operation on local_failed_int.
+  // Thus, if local_failed_int is 1 on any rank, global_result will be 1 on all ranks.
+
+  mpiErr = (MPI_Allreduce(&local_failed_int, &global_failed_int,
+            1, MPI_INT, MPI_LOR, internal::GTEST_MPI_COMM_WORLD) != MPI_SUCCESS);
+  if (mpiErr)
+  {
+      GTEST_LOG_(ERROR)
+        << "Error in MPI_Allreduce (should return MPI_SUCCESS)!";
+      return false;
+  }
+  // Store the synchronized result in the SomeProcessFailed variable
+  SomeProcessFailed = global_failed_int ? true : false;
+  return true;
+}
+#endif
+
 // Returns true if and only if the test failed.
 bool TestResult::Failed() const {
+#if GTEST_HAS_MPI
+  if (SomeProcessFailed) {
+      // There was a failure on a different process
+      return true;
+    }
+#endif
   for (int i = 0; i < total_part_count(); ++i) {
     if (GetTestPartResult(i).failed()) return true;
   }
@@ -2893,6 +2927,9 @@ void TestInfo::Run() {
   }
 
   result_.set_elapsed_time(timer.Elapsed());
+#if GTEST_HAS_MPI
+  result_.Synchronize ();
+#endif
 
   // Notifies the unit test event listener that a test has just finished.
   repeater->OnTestEnd(*this);
@@ -5135,7 +5172,7 @@ class ScopedPrematureExitFile {
 #if GTEST_HAS_MPI
     // We need to verify that MPI was initialized here...
     if (GTestIsInitialized()) {
-      if( MPI_Comm_rank(MPI_COMM_WORLD, &rank_) != MPI_SUCCESS) {
+      if( MPI_Comm_rank(GTEST_MPI_COMM_WORLD, &rank_) != MPI_SUCCESS) {
         GTEST_LOG_(ERROR)
           << "Error MPI_Comm_rank should return MPI_SUCCESS.";
       }
@@ -6144,6 +6181,15 @@ bool UnitTestImpl::RunAllTests() {
         "Please fix it ASAP, or IT WILL START TO FAIL.\n");  // NOLINT
   }
 
+#if GTEST_HAS_MPI
+  // delete our communicator
+  if (GTEST_MPI_COMM_WORLD != MPI_COMM_WORLD)
+  {
+    MPI_Comm_free(&GTEST_MPI_COMM_WORLD);
+    GTEST_MPI_COMM_WORLD = MPI_COMM_WORLD;
+  }
+#endif
+
   return !failed;
 }
 
@@ -6155,7 +6201,7 @@ bool UnitTestImpl::RunAllTests() {
 void WriteToShardStatusFileIfNeeded() {
   int rank = 0;
 #if GTEST_HAS_MPI
-  if( MPI_Comm_rank(MPI_COMM_WORLD, &rank) != MPI_SUCCESS) {
+  if( MPI_Comm_rank(GTEST_MPI_COMM_WORLD, &rank) != MPI_SUCCESS) {
     GTEST_LOG_(ERROR)
       << "Error MPI_Comm_rank should return MPI_SUCCESS.";
   }
@@ -6804,7 +6850,7 @@ static void LoadFlagsFromFile(const std::string& path) {
   std::string contents;
 #if GTEST_HAS_MPI
   int rank = 0;
-  if( MPI_Comm_rank(MPI_COMM_WORLD, &rank) != MPI_SUCCESS) {
+  if( MPI_Comm_rank(GTEST_MPI_COMM_WORLD, &rank) != MPI_SUCCESS) {
     GTEST_LOG_(ERROR)
       << "Error MPI_Comm_rank should return MPI_SUCCESS.";
   }
@@ -6821,12 +6867,12 @@ static void LoadFlagsFromFile(const std::string& path) {
   }
   // broadcast data because view on file system might be inconsistant
   int contents_size = contents.size();
-  MPI_Bcast(&contents_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&contents_size, 1, MPI_INT, 0, GTEST_MPI_COMM_WORLD);
   if( rank == 0 ) {
-    MPI_Bcast((void*)contents.data(), contents_size, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast((void*)contents.data(), contents_size, MPI_CHAR, 0, GTEST_MPI_COMM_WORLD);
   } else {
     char* const contents_buffer = new char[contents_size];
-    MPI_Bcast(contents_buffer, contents_size, MPI_CHAR, 0, MPI_COMM_WORLD);
+    MPI_Bcast(contents_buffer, contents_size, MPI_CHAR, 0, GTEST_MPI_COMM_WORLD);
     contents = std::string(contents_buffer,contents_size);
     delete[] contents_buffer;
   }
@@ -6979,9 +7025,9 @@ void InitGoogleTestImpl(int* argc, CharType** argv) {
   if (*argc <= 0) return;
 
 #if GTEST_HAS_MPI
+  // check that MPI is initialized
   int flag = 0;
-  int ierr = MPI_Initialized(&flag);
-  if( ierr != 0 )
+  if( MPI_Initialized(&flag) != MPI_SUCCESS )
   {
     GTEST_LOG_(ERROR)
       << "Error calling MPI_Initialized in InitGoogleTest, aborting...";
@@ -6991,6 +7037,14 @@ void InitGoogleTestImpl(int* argc, CharType** argv) {
   {
     GTEST_LOG_(ERROR)
       << "You need to call MPI_Init or MPI_Init_thread before InitGoogleTest, aborting...";
+    return;
+  }
+
+  // generate own communicator
+  if( MPI_Comm_dup(MPI_COMM_WORLD, &GTEST_MPI_COMM_WORLD) != MPI_SUCCESS )
+  {
+    GTEST_LOG_(ERROR)
+      << "Error creating MPI communicator in InitGoogleTest, aborting...";
     return;
   }
 #endif // GTEST_HAS_MPI
