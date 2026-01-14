@@ -249,17 +249,22 @@ bool FilePath::FileOrDirectoryExists() const {
   LPCWSTR unicode = String::AnsiToUtf16(pathname_.c_str());
   const DWORD attributes = GetFileAttributes(unicode);
   delete[] unicode;
-  return attributes != kInvalidFileAttributes;
+  int result = (attributes != kInvalidFileAttributes);
 #else
   posix::StatStruct file_stat{};
-  return posix::Stat(pathname_.c_str(), &file_stat) == 0;
+  int result = (posix::Stat(pathname_.c_str(), &file_stat) == 0);
 #endif  // GTEST_OS_WINDOWS_MOBILE
+#if GTEST_HAS_MPI
+  MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif // GTEST_HAS_MPI
+
+  return result;
 }
 
 // Returns true if pathname describes a directory in the file-system
 // that exists.
 bool FilePath::DirectoryExists() const {
-  bool result = false;
+  int result = false;
 #if GTEST_OS_WINDOWS
   // Don't strip off trailing separator if path is a root directory on
   // Windows (like "C:\\").
@@ -282,6 +287,9 @@ bool FilePath::DirectoryExists() const {
   result =
       posix::Stat(path.c_str(), &file_stat) == 0 && posix::IsDir(file_stat);
 #endif  // GTEST_OS_WINDOWS_MOBILE
+#if GTEST_HAS_MPI
+  MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif // GTEST_HAS_MPI
 
   return result;
 }
@@ -347,19 +355,30 @@ bool FilePath::CreateDirectoriesRecursively() const {
 // directory for any reason, including if the parent directory does not
 // exist. Not named "CreateDirectory" because that's a macro on Windows.
 bool FilePath::CreateFolder() const {
+  // only create the directory on the root process and check on the other that it exists
+  int result;
+#if GTEST_HAS_MPI
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if( rank == 0 ) {
+#endif // GTEST_HAS_MPI
 #if GTEST_OS_WINDOWS_MOBILE
   FilePath removed_sep(this->RemoveTrailingPathSeparator());
   LPCWSTR unicode = String::AnsiToUtf16(removed_sep.c_str());
   int result = CreateDirectory(unicode, nullptr) ? 0 : -1;
   delete[] unicode;
 #elif GTEST_OS_WINDOWS
-  int result = _mkdir(pathname_.c_str());
+  result = _mkdir(pathname_.c_str());
 #elif GTEST_OS_ESP8266 || GTEST_OS_XTENSA || GTEST_OS_QURT
   // do nothing
-  int result = 0;
+  result = 0;
 #else
-  int result = mkdir(pathname_.c_str(), 0777);
+  result = mkdir(pathname_.c_str(), 0777);
 #endif  // GTEST_OS_WINDOWS_MOBILE
+#if GTEST_HAS_MPI
+  }
+  MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif // GTEST_HAS_MPI
 
   if (result == -1) {
     return this->DirectoryExists();  // An error is OK if the directory exists.

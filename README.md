@@ -1,3 +1,13 @@
+# GoogleTest_MPI
+
+This repository collects the MPI extensions to the Googletest library as developed at
+the DLR institute for Software technology.
+
+For an introduction on how to use Google test with MPI, see:
+[MPIGuide.md](https://github.com/DLR-SC/googletest_mpi/blob/feature/mpi_nonblocking_expect/googletest/docs/MPIGuide.md)
+
+The remainder of this file is the original README of GoogleTest.
+
 # GoogleTest
 
 ### Announcements

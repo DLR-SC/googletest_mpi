@@ -33,6 +33,9 @@
 #include "gtest/gtest.h"
 
 int main(int argc, char **argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   testing::InitGoogleTest(&argc, argv);
 
   // An ad-hoc assertion outside of all tests.
@@ -50,5 +53,10 @@ int main(int argc, char **argv) {
   EXPECT_EQ(1, 2);
 
   // The above EXPECT_EQ() should cause RUN_ALL_TESTS() to return non-zero.
-  return RUN_ALL_TESTS() ? 0 : 1;
+  int result = RUN_ALL_TESTS() ? 0 : 1;
+
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
+  return result;
 }

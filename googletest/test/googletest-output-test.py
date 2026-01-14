@@ -310,14 +310,14 @@ class GTestOutputTest(gtest_test_utils.TestCase):
 
       # This code is very handy when debugging golden file differences:
       if os.getenv('DEBUG_GTEST_OUTPUT_TEST'):
-        open(os.path.join(
+        with open(os.path.join(gtest_test_utils.GetSourceDir(),
+                               '_googletest-output-test_normalized_actual.txt'), 'wb') as f:
+            f.write(normalized_actual.encode())
+        with open(os.path.join(
             gtest_test_utils.GetSourceDir(),
-            '_googletest-output-test_normalized_actual.txt'), 'wb').write(
-                normalized_actual)
-        open(os.path.join(
-            gtest_test_utils.GetSourceDir(),
-            '_googletest-output-test_normalized_golden.txt'), 'wb').write(
-                normalized_golden)
+            '_googletest-output-test_normalized_golden.txt'), 'wb') as f:
+            f.write(
+                normalized_golden.encode())
 
       self.assertEqual(normalized_golden, normalized_actual)
 

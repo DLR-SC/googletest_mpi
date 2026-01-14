@@ -1012,6 +1012,9 @@ TEST_F(TestSuiteThatFailsToSetUp, ShouldNotRun) { std::abort(); }
 // of them are intended to fail), and then compare the test results
 // with the "golden" file.
 int main(int argc, char** argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   GTEST_FLAG_SET(print_time, false);
 
   // We just run the tests, knowing some of them are intended to fail.
@@ -1049,5 +1052,12 @@ int main(int argc, char** argv) {
 #if _MSC_VER
   GTEST_DISABLE_MSC_WARNINGS_POP_()  //  4127
 #endif                               //  _MSC_VER
-  return RunAllTests();
+
+  int result = RunAllTests();
+
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
+
+  return result;
 }

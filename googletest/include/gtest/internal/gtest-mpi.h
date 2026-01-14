@@ -1,4 +1,4 @@
-// Copyright 2009, Google Inc.
+// Copyright 2021, Johannes Holke.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -26,52 +26,37 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-// Tests Google Test's throw-on-failure mode with exceptions disabled.
 //
-// This program must be compiled with exceptions disabled.  It will be
-// invoked by googletest-throw-on-failure-test.py, and is expected to exit
-// with non-zero in the throw-on-failure mode or 0 otherwise.
+// Authors: johannes.holke@dlr.de (Johannes Holke)
+//
+// Low-level types and utilities for extending Google Test with MPI support.
+// This file should be included in each internal Google Test file that requires 
+// MPI. If MPI support is enabled the MPI headers will be included together
+// with this file.
+// Since some MPI vendors require MPI to be included first 
+// ALWAYS INCLUDE THISE HEADER FIRST before including other headers.
+//
+// Why are the contents of this file not part of gtest-port.h?
+//   Because the gtest-port.h is not required to be included first and
+//   we do not want to change this requirement.
 
-#include <stdio.h>   // for fflush, fprintf, NULL, etc.
-#include <stdlib.h>  // for exit
+#ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_MPI_H_
+#define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_MPI_H_
 
-#include <exception>  // for set_terminate
+//   GTEST_HAS_MPI            - Define it to 1/0 to indicate that <mpi.h>
+//                              is/isn't available.
 
-#include "gtest/gtest.h"
+// Enable MPI
+// To enable MPI define GTEST_HAS_MPI to 1 before
+// including this header.
+#ifndef GTEST_HAS_MPI
+#define GTEST_HAS_MPI 0
+#endif
 
-// This terminate handler aborts the program using exit() rather than abort().
-// This avoids showing pop-ups on Windows systems and core dumps on Unix-like
-// ones.
-void TerminateHandler() {
-  fprintf(stderr, "%s\n", "Unhandled C++ exception terminating the program.");
-  fflush(nullptr);
-  exit(1);
-}
-
-int main(int argc, char** argv) {
+// Include the MPI header
 #if GTEST_HAS_MPI
-  MPI_Init(&argc, &argv);
+#include <mpi.h>
 #endif
-#if GTEST_HAS_EXCEPTIONS
-  std::set_terminate(&TerminateHandler);
-#endif
-  testing::InitGoogleTest(&argc, argv);
 
-  // We want to ensure that people can use Google Test assertions in
-  // other testing frameworks, as long as they initialize Google Test
-  // properly and set the throw-on-failure mode.  Therefore, we don't
-  // use Google Test's constructs for defining and running tests
-  // (e.g. TEST and RUN_ALL_TESTS) here.
+#endif // GTEST_INCLUDE_GTEST_INTERNAL_GTEST_MPI_H_
 
-  // In the throw-on-failure mode with exceptions disabled, this
-  // assertion will cause the program to exit with a non-zero code.
-  EXPECT_EQ(2, 3);
-
-  // When not in the throw-on-failure mode, the control will reach
-  // here.
-#if GTEST_HAS_MPI
-  MPI_Finalize();
-#endif
-  return 0;
-}

@@ -276,6 +276,9 @@ void TestCatchesLeakedMocksInAdHocTests() {
 }
 
 int main(int argc, char** argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   testing::InitGoogleMock(&argc, argv);
   // Ensures that the tests pass no matter what value of
   // --gmock_catch_leaked_mocks and --gmock_verbose the user specifies.
@@ -283,7 +286,11 @@ int main(int argc, char** argv) {
   GMOCK_FLAG_SET(verbose, "warning");
 
   TestCatchesLeakedMocksInAdHocTests();
-  return RUN_ALL_TESTS();
+  int result = RUN_ALL_TESTS();
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
+  return result;
 }
 
 #ifdef _MSC_VER
