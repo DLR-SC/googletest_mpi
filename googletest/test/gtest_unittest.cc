@@ -5115,6 +5115,104 @@ TEST(AssertionResultTest, ConstructibleFromImplicitlyConvertible) {
   EXPECT_TRUE(obj);
 }
 
+#if GTEST_HAS_MPI
+class TriStateAssertionResult : public AssertionResult
+{
+  public:
+    TriStateAssertionResult(bool success, bool globalResultsDiffer) :
+        AssertionResult(success, false)
+    {
+      success_ = success;
+      globalResultsDiffer_ = globalResultsDiffer;
+    }
+};
+
+TEST(AssertionResultTest, TriStateWorks) {
+  const AssertionResult r1 = TriStateAssertionResult(true,false);
+  const AssertionResult r2 = TriStateAssertionResult(false,false);
+  const AssertionResult r3 = TriStateAssertionResult(true,true);
+  const AssertionResult r4 = TriStateAssertionResult(false,true);
+
+  bool true_value = true;
+  bool false_value = false;
+  EXPECT_EQ(true_value, (bool)r1);
+  EXPECT_EQ(false_value, (bool)r2);
+  EXPECT_EQ(false_value, (bool)r3);
+  EXPECT_EQ(false_value, (bool)r4);
+
+  EXPECT_TRUE(r1);
+  EXPECT_NONFATAL_FAILURE(EXPECT_TRUE(r2) << "expected failure", "expected failure");
+  EXPECT_NONFATAL_FAILURE(EXPECT_TRUE(r3) << "expected failure", "expected failure");
+  EXPECT_NONFATAL_FAILURE(EXPECT_TRUE(r4) << "expected failure", "expected failure");
+
+  EXPECT_NONFATAL_FAILURE(EXPECT_FALSE(r1) << "expected failure", "expected failure");
+  EXPECT_FALSE(r2);
+  EXPECT_NONFATAL_FAILURE(EXPECT_FALSE(r3) << "expected failure", "expected failure");
+  EXPECT_NONFATAL_FAILURE(EXPECT_FALSE(r4) << "expected failure", "expected failure");
+}
+
+TEST(AssertionResultTest, ConstructionWorksForDifferentValuesOnDifferentMPIProcesses) {
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  int size = 1;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  AssertionResult r1(rank != 0, true);
+  r1 << "only false on root process";
+  int b1 = (bool)r1;
+  EXPECT_FALSE(b1);
+  int b1_g;
+  MPI_Allreduce(&b1, &b1_g, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+  EXPECT_FALSE(b1_g);
+
+  AssertionResult r2 = AssertionResult(rank+1 != size, true) << "only false on last process";
+  int b2 = (bool)r2;
+  EXPECT_FALSE(b2);
+  int b2_g;
+  MPI_Allreduce(&b2, &b2_g, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+  EXPECT_FALSE(b2_g);
+
+  AssertionResult r3 = AssertionResult(rank%2 == 0, true) << "only true on even processes";
+  if( size == 1 ) {
+    EXPECT_TRUE(r3);
+  } else {
+    int b3 = (bool)r3;
+    EXPECT_FALSE(b3);
+    int b3_g;
+    MPI_Allreduce(&b3, &b3_g, 1, MPI_INT, MPI_LOR, MPI_COMM_WORLD);
+    EXPECT_FALSE(b3_g);
+  }
+}
+
+
+TEST(AssertionResultTest, NegationWorksForDifferentValuesOnDifferentMPIProcesses) {
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  int size = 1;
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+  bool false_value = false;
+  bool true_value = true;
+  AssertionResult r1 = AssertionResult(rank != 0, true) << "only false on root process";
+  if( size == 1 ) {
+    EXPECT_EQ(false_value,r1);
+    EXPECT_EQ(true_value,!r1);
+  } else {
+    EXPECT_EQ(false_value,r1);
+    EXPECT_EQ(false_value,!r1);
+  }
+
+  AssertionResult r2 = AssertionResult(rank == 0, true) << "only true on root process";
+  if( size == 1 ) {
+    EXPECT_EQ(true_value,r2);
+    EXPECT_EQ(false_value,!r2);
+  } else {
+    EXPECT_EQ(false_value,r2);
+    EXPECT_EQ(false_value,!r2);
+  }
+}
+#endif
+
 // Tests streaming a user type whose definition and operator << are
 // both in the global namespace.
 class Base {

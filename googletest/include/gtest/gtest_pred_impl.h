@@ -117,10 +117,10 @@ AssertionResult AssertPred1Helper(const char* pred_text, const char* e1,
 template <typename Pred, typename T1, typename T2>
 AssertionResult AssertPred2Helper(const char* pred_text, const char* e1,
                                   const char* e2, Pred pred, const T1& v1,
-                                  const T2& v2) {
-  if (pred(v1, v2)) return AssertionSuccess();
+                                  const T2& v2, bool global = true) {
+  if (pred(v1, v2)) return AssertionSuccess(global);
 
-  return AssertionFailure()
+  return AssertionFailure(global)
          << pred_text << "(" << e1 << ", " << e2
          << ") evaluates to false, where"
          << "\n"

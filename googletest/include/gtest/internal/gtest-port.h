@@ -1918,6 +1918,15 @@ class GTEST_API_ ThreadLocal {
 
 #endif  // GTEST_IS_THREADSAFE
 
+
+#ifdef GTEST_HAS_MPI
+
+// Forward-declares the MPI communicator
+extern MPI_Comm GTEST_MPI_COMM_WORLD;
+
+#endif // GTEST_HAS_MPI
+
+
 // Returns the number of threads running in the process, or 0 to indicate that
 // we cannot detect it.
 GTEST_API_ size_t GetThreadCount();
