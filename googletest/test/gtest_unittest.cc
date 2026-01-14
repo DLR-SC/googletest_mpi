@@ -6275,21 +6275,49 @@ class FlagfileTest : public ParseFlagsTest {
     testdata_path_.Set(internal::FilePath(
         testing::TempDir() + internal::GetCurrentExecutableName().string() +
         "_flagfile_test"));
+#if GTEST_HAS_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if( rank == 0 ) {
+#endif
     testing::internal::posix::RmDir(testdata_path_.c_str());
+#if GTEST_HAS_MPI
+    }
+#endif
     EXPECT_TRUE(testdata_path_.CreateFolder());
   }
 
   void TearDown() override {
+#if GTEST_HAS_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if( rank == 0 ) {
+#endif
     testing::internal::posix::RmDir(testdata_path_.c_str());
     ParseFlagsTest::TearDown();
+#if GTEST_HAS_MPI
+    }
+#endif
   }
 
   internal::FilePath CreateFlagfile(const char* contents) {
     internal::FilePath file_path(internal::FilePath::GenerateUniqueFileName(
         testdata_path_, internal::FilePath("unique"), "txt"));
+#if GTEST_HAS_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if( rank == 0 )
+    {
+#endif // GTEST_HAS_MPI
     FILE* f = testing::internal::posix::FOpen(file_path.c_str(), "w");
     fprintf(f, "%s", contents);
     fclose(f);
+#if GTEST_HAS_MPI
+    }
+#endif
     return file_path;
   }
 

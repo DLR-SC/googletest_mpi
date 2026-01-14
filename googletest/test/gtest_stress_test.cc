@@ -225,12 +225,18 @@ TEST(NonFatalFailureOnAllThreadsTest, ExpectNonFatalFailureOnAllThreads) {
 }  // namespace testing
 
 int main(int argc, char** argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   testing::InitGoogleTest(&argc, argv);
 
   const int result = RUN_ALL_TESTS();  // Expected to fail.
   GTEST_CHECK_(result == 1) << "RUN_ALL_TESTS() did not fail as expected";
 
   printf("\nPASS\n");
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
   return 0;
 }
 
@@ -239,7 +245,14 @@ TEST(StressTest,
      DISABLED_ThreadSafetyTestsAreSkippedWhenGoogleTestIsNotThreadSafe) {}
 
 int main(int argc, char **argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int result = RUN_ALL_TESTS();
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
+  return result;
 }
 #endif  // GTEST_IS_THREADSAFE
