@@ -78,6 +78,8 @@
 //                              expressions are/aren't available.
 //   GTEST_HAS_PTHREAD        - Define it to 1/0 to indicate that <pthread.h>
 //                              is/isn't available.
+//   GTEST_HAS_MPI            - Define it to 1/0 to indicate that <mpi.h>
+//                              is/isn't available. Defined in "gtest/internal/gtest-mpi.h"
 //   GTEST_HAS_RTTI           - Define it to 1/0 to indicate that RTTI is/isn't
 //                              enabled.
 //   GTEST_HAS_STD_WSTRING    - Define it to 1/0 to indicate that
@@ -278,6 +280,12 @@
     GTEST_INTERNAL_CPLUSPLUS_LANG < 201402L
 #error C++ versions less than C++14 are not supported.
 #endif
+
+// gtest-port.h guarantees to #include <mpi.h> when GTEST_HAS_MPI is
+// true.
+// Some MPI vendors require this include to be the *first* include
+// (e.g. before system headers!)
+#include "gtest/internal/gtest-mpi.h" //NOLINT
 
 #include <ctype.h>   // for isspace, etc
 #include <stddef.h>  // for ptrdiff_t
@@ -663,7 +671,10 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
      defined(GTEST_OS_HAIKU) || defined(GTEST_OS_GNU_HURD))
 // Death tests require a file system to work properly.
 #if GTEST_HAS_FILE_SYSTEM
+#if !GTEST_HAS_MPI
+// The usage of fork in an MPI process is not standardized and probably not supported.
 #define GTEST_HAS_DEATH_TEST 1
+#endif  // !GTEST_HAS_MPI
 #endif  // GTEST_HAS_FILE_SYSTEM
 #endif
 

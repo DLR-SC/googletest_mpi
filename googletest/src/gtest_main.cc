@@ -27,6 +27,11 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#if GTEST_HAS_MPI
+// Some MPI vendors require mpi.h to be included before anything else.
+#include <mpi.h>
+#endif // GTEST_HAS_MPI
+
 #include <cstdio>
 
 #include "gtest/gtest.h"
@@ -59,8 +64,24 @@ GTEST_API_ int main() {
 // Normal platforms: program entry point is main, argc/argv are initialized.
 
 GTEST_API_ int main(int argc, char **argv) {
+#if GTEST_HAS_MPI
+  if( MPI_Init(&argc, &argv) != MPI_SUCCESS )
+  {
+    std::cout << "Error calling MPI_Init!\n";
+    return 1;
+  }
+#endif
   printf("Running main() from %s\n", __FILE__);
   testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int result = RUN_ALL_TESTS();
+#if GTEST_HAS_MPI
+  if( MPI_Finalize() != MPI_SUCCESS )
+  {
+    std::cout << "Error calling MPI_Finalize!\n";
+    return 1;
+  }
+#endif
+  // Warning: this return value may get lost when executed with MPI
+  return result;
 }
 #endif

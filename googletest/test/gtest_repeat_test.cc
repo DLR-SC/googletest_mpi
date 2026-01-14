@@ -195,6 +195,9 @@ void TestRepeatWithFilterForFailedTests(int repeat) {
 }  // namespace
 
 int main(int argc, char **argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   testing::InitGoogleTest(&argc, argv);
 
   testing::AddGlobalTestEnvironment(new MyEnvironment);
@@ -217,6 +220,9 @@ int main(int argc, char **argv) {
   // debugging only and doesn't affect the normal test result, such a
   // test would be an overkill.
 
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
   printf("PASS\n");
   return 0;
 }
