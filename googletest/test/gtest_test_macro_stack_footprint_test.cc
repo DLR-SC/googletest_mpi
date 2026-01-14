@@ -81,8 +81,14 @@
 THOUSAND_TESTS_(T)
 
 int main(int argc, char **argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   testing::InitGoogleTest(&argc, argv);
 
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
   // We don't actually need to run the dummy tests - the purpose is to
   // ensure that they compile.
   return 0;
