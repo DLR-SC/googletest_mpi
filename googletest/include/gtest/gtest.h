@@ -421,6 +421,14 @@ class GTEST_API_ [[nodiscard]] TestResult {
   // Returns true if and only if the test was skipped.
   bool Skipped() const;
 
+#if GTEST_HAS_MPI
+  // Synchronize the result of Failed() across MPI processes
+  // The return value is true if the synchronization was successful and false otherwise.
+  // This is an MPI collective operation and must be called on all processes in
+  // GTEST_MPI_COMM_WORLD
+  bool Synchronize ();
+#endif
+
   // Returns true if and only if the test failed.
   bool Failed() const;
 
@@ -502,6 +510,10 @@ class GTEST_API_ [[nodiscard]] TestResult {
 
   // Clears the object.
   void Clear();
+
+#if GTEST_HAS_MPI
+  bool SomeProcessFailed;
+#endif
 
   // Protects mutable state of the property vector and of owned
   // properties, whose values may be updated.
@@ -1377,10 +1389,10 @@ namespace internal {
 template <typename T1, typename T2>
 AssertionResult CmpHelperEQFailure(const char* lhs_expression,
                                    const char* rhs_expression, const T1& lhs,
-                                   const T2& rhs) {
+                                   const T2& rhs, bool global = true) {
   return EqFailure(lhs_expression, rhs_expression,
                    FormatForComparisonFailureMessage(lhs, rhs),
-                   FormatForComparisonFailureMessage(rhs, lhs), false);
+                   FormatForComparisonFailureMessage(rhs, lhs), false, global);
 }
 
 // This block of code defines operator==/!=
@@ -1394,12 +1406,12 @@ inline bool operator!=(faketype, faketype) { return false; }
 template <typename T1, typename T2>
 AssertionResult CmpHelperEQ(const char* lhs_expression,
                             const char* rhs_expression, const T1& lhs,
-                            const T2& rhs) {
+                            const T2& rhs, bool global = true) {
   if (lhs == rhs) {
-    return AssertionSuccess();
+    return AssertionSuccess(global);
   }
 
-  return CmpHelperEQFailure(lhs_expression, rhs_expression, lhs, rhs);
+  return CmpHelperEQFailure(lhs_expression, rhs_expression, lhs, rhs, global);
 }
 
 class [[nodiscard]] EqHelper {
@@ -1413,8 +1425,8 @@ class [[nodiscard]] EqHelper {
                               !std::is_pointer<T2>::value>::type* = nullptr>
   static AssertionResult Compare(const char* lhs_expression,
                                  const char* rhs_expression, const T1& lhs,
-                                 const T2& rhs) {
-    return CmpHelperEQ(lhs_expression, rhs_expression, lhs, rhs);
+                                 const T2& rhs, bool global = true) {
+    return CmpHelperEQ(lhs_expression, rhs_expression, lhs, rhs, global);
   }
 
   // With this overloaded version, we allow anonymous enums to be used
@@ -1425,18 +1437,18 @@ class [[nodiscard]] EqHelper {
   // cannot merge the two, as it will make anonymous enums unhappy.
   static AssertionResult Compare(const char* lhs_expression,
                                  const char* rhs_expression, BiggestInt lhs,
-                                 BiggestInt rhs) {
-    return CmpHelperEQ(lhs_expression, rhs_expression, lhs, rhs);
+                                 BiggestInt rhs, bool global = true) {
+    return CmpHelperEQ(lhs_expression, rhs_expression, lhs, rhs, global);
   }
 
   template <typename T>
   static AssertionResult Compare(
       const char* lhs_expression, const char* rhs_expression,
       // Handle cases where '0' is used as a null pointer literal.
-      std::nullptr_t /* lhs */, T* rhs) {
+      std::nullptr_t /* lhs */, T* rhs, bool global = true) {
     // We already know that 'lhs' is a null pointer.
     return CmpHelperEQ(lhs_expression, rhs_expression, static_cast<T*>(nullptr),
-                       rhs);
+                       rhs, global);
   }
 };
 
@@ -1446,8 +1458,8 @@ class [[nodiscard]] EqHelper {
 template <typename T1, typename T2>
 AssertionResult CmpHelperOpFailure(const char* expr1, const char* expr2,
                                    const T1& val1, const T2& val2,
-                                   const char* op) {
-  return AssertionFailure()
+                                   const char* op, bool global = true) {
+  return AssertionFailure(global)
          << "Expected: (" << expr1 << ") " << op << " (" << expr2
          << "), actual: " << FormatForComparisonFailureMessage(val1, val2)
          << " vs " << FormatForComparisonFailureMessage(val2, val1);
@@ -1462,11 +1474,11 @@ AssertionResult CmpHelperOpFailure(const char* expr1, const char* expr2,
 #define GTEST_IMPL_CMP_HELPER_(op_name, op)                                \
   template <typename T1, typename T2>                                      \
   AssertionResult CmpHelper##op_name(const char* expr1, const char* expr2, \
-                                     const T1& val1, const T2& val2) {     \
+                                     const T1& val1, const T2& val2, bool global = true) {     \
     if (val1 op val2) {                                                    \
-      return AssertionSuccess();                                           \
+      return AssertionSuccess(global);                                     \
     } else {                                                               \
-      return CmpHelperOpFailure(expr1, expr2, val1, val2, #op);            \
+      return CmpHelperOpFailure(expr1, expr2, val1, val2, #op, global);    \
     }                                                                      \
   }
 
@@ -1490,42 +1502,42 @@ GTEST_IMPL_CMP_HELPER_(GT, >)
 // INTERNAL IMPLEMENTATION - DO NOT USE IN A USER PROGRAM.
 GTEST_API_ AssertionResult CmpHelperSTREQ(const char* s1_expression,
                                           const char* s2_expression,
-                                          const char* s1, const char* s2);
+                                          const char* s1, const char* s2, bool global = true);
 
 // The helper function for {ASSERT|EXPECT}_STRCASEEQ.
 //
 // INTERNAL IMPLEMENTATION - DO NOT USE IN A USER PROGRAM.
 GTEST_API_ AssertionResult CmpHelperSTRCASEEQ(const char* s1_expression,
                                               const char* s2_expression,
-                                              const char* s1, const char* s2);
+                                              const char* s1, const char* s2, bool global = true);
 
 // The helper function for {ASSERT|EXPECT}_STRNE.
 //
 // INTERNAL IMPLEMENTATION - DO NOT USE IN A USER PROGRAM.
 GTEST_API_ AssertionResult CmpHelperSTRNE(const char* s1_expression,
                                           const char* s2_expression,
-                                          const char* s1, const char* s2);
+                                          const char* s1, const char* s2, bool global = true);
 
 // The helper function for {ASSERT|EXPECT}_STRCASENE.
 //
 // INTERNAL IMPLEMENTATION - DO NOT USE IN A USER PROGRAM.
 GTEST_API_ AssertionResult CmpHelperSTRCASENE(const char* s1_expression,
                                               const char* s2_expression,
-                                              const char* s1, const char* s2);
+                                              const char* s1, const char* s2, bool global = true);
 
 // Helper function for *_STREQ on wide strings.
 //
 // INTERNAL IMPLEMENTATION - DO NOT USE IN A USER PROGRAM.
 GTEST_API_ AssertionResult CmpHelperSTREQ(const char* s1_expression,
                                           const char* s2_expression,
-                                          const wchar_t* s1, const wchar_t* s2);
+                                          const wchar_t* s1, const wchar_t* s2, bool global = true);
 
 // Helper function for *_STRNE on wide strings.
 //
 // INTERNAL IMPLEMENTATION - DO NOT USE IN A USER PROGRAM.
 GTEST_API_ AssertionResult CmpHelperSTRNE(const char* s1_expression,
                                           const char* s2_expression,
-                                          const wchar_t* s1, const wchar_t* s2);
+                                          const wchar_t* s1, const wchar_t* s2, bool global = true);
 
 }  // namespace internal
 
@@ -1540,37 +1552,45 @@ GTEST_API_ AssertionResult CmpHelperSTRNE(const char* s1_expression,
 GTEST_API_ AssertionResult IsSubstring(const char* needle_expr,
                                        const char* haystack_expr,
                                        const char* needle,
-                                       const char* haystack);
+                                       const char* haystack,
+                                       bool global = true);
 GTEST_API_ AssertionResult IsSubstring(const char* needle_expr,
                                        const char* haystack_expr,
                                        const wchar_t* needle,
-                                       const wchar_t* haystack);
+                                       const wchar_t* haystack,
+                                       bool global = true);
 GTEST_API_ AssertionResult IsNotSubstring(const char* needle_expr,
                                           const char* haystack_expr,
                                           const char* needle,
-                                          const char* haystack);
+                                          const char* haystack,
+                                          bool global = true);
 GTEST_API_ AssertionResult IsNotSubstring(const char* needle_expr,
                                           const char* haystack_expr,
                                           const wchar_t* needle,
-                                          const wchar_t* haystack);
+                                          const wchar_t* haystack,
+                                          bool global = true);
 GTEST_API_ AssertionResult IsSubstring(const char* needle_expr,
                                        const char* haystack_expr,
                                        const ::std::string& needle,
-                                       const ::std::string& haystack);
+                                       const ::std::string& haystack,
+                                       bool global = true);
 GTEST_API_ AssertionResult IsNotSubstring(const char* needle_expr,
                                           const char* haystack_expr,
                                           const ::std::string& needle,
-                                          const ::std::string& haystack);
+                                          const ::std::string& haystack,
+                                          bool global = true);
 
 #if GTEST_HAS_STD_WSTRING
 GTEST_API_ AssertionResult IsSubstring(const char* needle_expr,
                                        const char* haystack_expr,
                                        const ::std::wstring& needle,
-                                       const ::std::wstring& haystack);
+                                       const ::std::wstring& haystack,
+                                       bool global = true);
 GTEST_API_ AssertionResult IsNotSubstring(const char* needle_expr,
                                           const char* haystack_expr,
                                           const ::std::wstring& needle,
-                                          const ::std::wstring& haystack);
+                                          const ::std::wstring& haystack,
+                                          bool global = true);
 #endif  // GTEST_HAS_STD_WSTRING
 
 namespace internal {

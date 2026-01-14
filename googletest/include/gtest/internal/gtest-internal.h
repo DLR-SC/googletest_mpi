@@ -206,7 +206,8 @@ GTEST_API_ AssertionResult EqFailure(const char* expected_expression,
                                      const char* actual_expression,
                                      const std::string& expected_value,
                                      const std::string& actual_value,
-                                     bool ignoring_case);
+                                     bool ignoring_case,
+                                     bool global = true);
 
 // Constructs a failure message for Boolean assertions such as EXPECT_TRUE.
 GTEST_API_ std::string GetBoolAssertionFailureMessage(

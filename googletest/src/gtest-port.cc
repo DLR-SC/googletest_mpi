@@ -676,6 +676,15 @@ void ThreadLocalRegistry::OnThreadLocalDestroyed(
 
 #endif  // GTEST_IS_THREADSAFE && GTEST_OS_WINDOWS
 
+
+#ifdef GTEST_HAS_MPI
+
+// MPI communicator used in googletest
+MPI_Comm GTEST_MPI_COMM_WORLD = MPI_COMM_WORLD;
+
+#endif // GTEST_HAS_MPI
+
+
 #ifdef GTEST_USES_POSIX_RE
 
 // Implements RE.  Currently only needed for death tests.
