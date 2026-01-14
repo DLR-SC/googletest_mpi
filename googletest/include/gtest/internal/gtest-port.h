@@ -78,6 +78,8 @@
 //                              expressions are/aren't available.
 //   GTEST_HAS_PTHREAD        - Define it to 1/0 to indicate that <pthread.h>
 //                              is/isn't available.
+//   GTEST_HAS_MPI            - Define it to 1/0 to indicate that <mpi.h>
+//                              is/isn't available. Defined in "gtest/internal/gtest-mpi.h"
 //   GTEST_HAS_RTTI           - Define it to 1/0 to indicate that RTTI is/isn't
 //                              enabled.
 //   GTEST_HAS_STD_WSTRING    - Define it to 1/0 to indicate that
@@ -254,6 +256,12 @@
 //   GTEST_INTERNAL_DEPRECATED(message) - attribute marking a function as
 //                                        deprecated; calling a marked function
 //                                        should generate a compiler warning
+
+// gtest-port.h guarantees to #include <mpi.h> when GTEST_HAS_MPI is
+// true.
+// Some MPI vendors require this include to be the *first* include
+// (e.g. before system headers!)
+#include "gtest/internal/gtest-mpi.h" //NOLINT
 
 #include <ctype.h>   // for isspace, etc
 #include <stddef.h>  // for ptrdiff_t
@@ -596,7 +604,10 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
      GTEST_OS_FREEBSD || GTEST_OS_NETBSD || GTEST_OS_FUCHSIA ||           \
      GTEST_OS_DRAGONFLY || GTEST_OS_GNU_KFREEBSD || GTEST_OS_HAIKU ||     \
      GTEST_OS_GNU_HURD)
+#if !GTEST_HAS_MPI
+// The usage of fork in an MPI process is not standardized and probably not supported.
 #define GTEST_HAS_DEATH_TEST 1
+#endif
 #endif
 
 // Determines whether to support type-driven tests.

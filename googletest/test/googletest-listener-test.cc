@@ -265,6 +265,9 @@ void VerifyResults(const std::vector<std::string>& data,
 }
 
 int main(int argc, char** argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   std::vector<std::string> events;
   g_events = &events;
   InitGoogleTest(&argc, argv);
@@ -510,5 +513,8 @@ int main(int argc, char** argv) {
   // RUN_ALL_TESTS finishes.
   if (UnitTest::GetInstance()->Failed()) ret_val = 1;
 
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
   return ret_val;
 }
