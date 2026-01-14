@@ -43,7 +43,7 @@ namespace testing {
 // AssertionResult constructors.
 // Used in EXPECT_TRUE/FALSE(assertion_result).
 AssertionResult::AssertionResult(const AssertionResult& other)
-    : success_(other.success_),
+    : success_(other.success_), globalResultsDiffer_(other.globalResultsDiffer_),
       message_(other.message_.get() != nullptr
                    ? new ::std::string(*other.message_)
                    : static_cast< ::std::string*>(nullptr)) {}
@@ -52,21 +52,49 @@ AssertionResult::AssertionResult(const AssertionResult& other)
 void AssertionResult::swap(AssertionResult& other) {
   using std::swap;
   swap(success_, other.success_);
+  swap(globalResultsDiffer_, other.globalResultsDiffer_);
   swap(message_, other.message_);
+}
+
+// checks that all MPI processes have the same v
+bool AssertionResult::boolIdenticalOnMPIprocs(bool v)
+{
+#ifdef GTEST_HAS_MPI
+  int localSuccess = v;
+  int globalAndV, globalOrV;
+  bool mpiErr = false;
+  mpiErr = mpiErr || (MPI_Allreduce(&localSuccess, &globalAndV, 1, MPI_INT, MPI_LAND, internal::GTEST_MPI_COMM_WORLD) != MPI_SUCCESS);
+  mpiErr = mpiErr || (MPI_Allreduce(&localSuccess, &globalOrV, 1, MPI_INT, MPI_LOR, internal::GTEST_MPI_COMM_WORLD) != MPI_SUCCESS);
+  if( mpiErr )
+  {
+      GTEST_LOG_(ERROR)
+        << "Error in MPI_Allreduce (should return MPI_SUCCESS)!";
+      return false;
+  }
+  else
+  {
+    return globalAndV == globalOrV;
+  }
+#endif
 }
 
 // Returns the assertion's negation. Used with EXPECT/ASSERT_FALSE.
 AssertionResult AssertionResult::operator!() const {
-  AssertionResult negation(!success_);
+  AssertionResult negation(!success_, false);
+  negation.globalResultsDiffer_ = globalResultsDiffer_;
   if (message_.get() != nullptr) negation << *message_;
   return negation;
 }
 
 // Makes a successful assertion result.
-AssertionResult AssertionSuccess() { return AssertionResult(true); }
+AssertionResult AssertionSuccess(bool global) {
+  return AssertionResult(true, global);
+}
 
 // Makes a failed assertion result.
-AssertionResult AssertionFailure() { return AssertionResult(false); }
+AssertionResult AssertionFailure(bool global) {
+  return AssertionResult(false, global);
+}
 
 // Makes a failed assertion result with the given failure message.
 // Deprecated; use AssertionFailure() << message.
