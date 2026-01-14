@@ -50,6 +50,9 @@ void TerminateHandler() {
 }
 
 int main(int argc, char** argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
 #if GTEST_HAS_EXCEPTIONS
   std::set_terminate(&TerminateHandler);
 #endif
@@ -67,5 +70,8 @@ int main(int argc, char** argv) {
 
   // When not in the throw-on-failure mode, the control will reach
   // here.
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
   return 0;
 }

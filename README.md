@@ -1,5 +1,16 @@
-# Google Test
+# GoogleTest_MPI
 
+This repository collects the MPI extensions to the Googletest library as developed at
+the DLR institute for Software technology.
+
+The implementations are based on version 1.10.0.
+
+For an introduction on how to use Google test with MPI, see:
+[MPIGuide.md](https://github.com/DLR-SC/googletest_mpi/blob/feature/mpi_nonblocking_expect/googletest/docs/MPIGuide.md)
+
+The remainder of this file is the original README of GoogleTest.
+
+# Google Test
 #### OSS Builds Status:
 
 [![Build Status](https://api.travis-ci.org/google/googletest.svg?branch=master)](https://travis-ci.org/google/googletest)

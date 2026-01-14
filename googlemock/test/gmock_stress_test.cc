@@ -230,11 +230,17 @@ TEST(StressTest, CanUseGMockWithThreads) {
 }  // namespace testing
 
 int main(int argc, char **argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   testing::InitGoogleMock(&argc, argv);
 
   const int exit_code = RUN_ALL_TESTS();  // Expected to fail.
   GTEST_CHECK_(exit_code != 0) << "RUN_ALL_TESTS() did not fail as expected";
 
   printf("\nPASS\n");
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
   return 0;
 }

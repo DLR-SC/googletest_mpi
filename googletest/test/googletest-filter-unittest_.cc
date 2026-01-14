@@ -131,7 +131,15 @@ INSTANTIATE_TEST_SUITE_P(SeqQ, ParamTest, testing::Values(5, 6));
 }  // namespace
 
 int main(int argc, char **argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   ::testing::InitGoogleTest(&argc, argv);
 
-  return RUN_ALL_TESTS();
+  int result = RUN_ALL_TESTS();
+
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
+  return result;
 }

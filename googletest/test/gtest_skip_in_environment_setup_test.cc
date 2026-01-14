@@ -41,9 +41,16 @@ class SetupEnvironment : public testing::Environment {
 TEST(Test, AlwaysFails) { EXPECT_EQ(true, false); }
 
 int main(int argc, char **argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   testing::InitGoogleTest(&argc, argv);
 
   testing::AddGlobalTestEnvironment(new SetupEnvironment());
 
-  return RUN_ALL_TESTS();
+  int result = RUN_ALL_TESTS();
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
+  return result;
 }

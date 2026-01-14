@@ -4496,6 +4496,15 @@ class ScopedPrematureExitFile {
   explicit ScopedPrematureExitFile(const char* premature_exit_filepath)
       : premature_exit_filepath_(premature_exit_filepath ?
                                  premature_exit_filepath : "") {
+#if GTEST_HAS_MPI
+    // We need to verify that MPI was initialized here...
+    if (GTestIsInitialized()) {
+      if( MPI_Comm_rank(MPI_COMM_WORLD, &rank_) != MPI_SUCCESS) {
+        GTEST_LOG_(ERROR)
+          << "Error MPI_Comm_rank should return MPI_SUCCESS.";
+      }
+    }
+#endif
     // If a path to the premature-exit file is specified...
     if (!premature_exit_filepath_.empty()) {
       // create the file with a single "0" character in it.  I/O
@@ -4520,6 +4529,7 @@ class ScopedPrematureExitFile {
 
  private:
   const std::string premature_exit_filepath_;
+  int rank_;
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(ScopedPrematureExitFile);
 };
@@ -5394,6 +5404,15 @@ bool UnitTestImpl::RunAllTests() {
 // function will write over it. If the variable is present, but the file cannot
 // be created, prints an error and exits.
 void WriteToShardStatusFileIfNeeded() {
+  int rank = 0;
+#if GTEST_HAS_MPI
+  if( MPI_Comm_rank(MPI_COMM_WORLD, &rank) != MPI_SUCCESS) {
+    GTEST_LOG_(ERROR)
+      << "Error MPI_Comm_rank should return MPI_SUCCESS.";
+  }
+#endif
+  if( rank != 0 )
+    return;
   const char* const test_shard_file = posix::GetEnv(kTestShardStatusFile);
   if (test_shard_file != nullptr) {
     FILE* const file = posix::FOpen(test_shard_file, "w");
@@ -5971,13 +5990,36 @@ static bool ParseGoogleTestFlag(const char* const arg) {
 
 #if GTEST_USE_OWN_FLAGFILE_FLAG_
 static void LoadFlagsFromFile(const std::string& path) {
-  FILE* flagfile = posix::FOpen(path.c_str(), "r");
-  if (!flagfile) {
-    GTEST_LOG_(FATAL) << "Unable to open file \"" << GTEST_FLAG(flagfile)
-                      << "\"";
+  std::string contents;
+#if GTEST_HAS_MPI
+  int rank = 0;
+  if( MPI_Comm_rank(MPI_COMM_WORLD, &rank) != MPI_SUCCESS) {
+    GTEST_LOG_(ERROR)
+      << "Error MPI_Comm_rank should return MPI_SUCCESS.";
   }
-  std::string contents(ReadEntireFile(flagfile));
-  posix::FClose(flagfile);
+  if( rank == 0 ) {
+#endif
+    FILE* flagfile = posix::FOpen(path.c_str(), "r");
+    if (!flagfile) {
+      GTEST_LOG_(FATAL) << "Unable to open file \"" << GTEST_FLAG(flagfile)
+                        << "\"";
+    }
+    contents = std::string(ReadEntireFile(flagfile));
+    posix::FClose(flagfile);
+#if GTEST_HAS_MPI
+  }
+  // broadcast data because view on file system might be inconsistant
+  int contents_size = contents.size();
+  MPI_Bcast(&contents_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if( rank == 0 ) {
+    MPI_Bcast((void*)contents.data(), contents_size, MPI_CHAR, 0, MPI_COMM_WORLD);
+  } else {
+    char* const contents_buffer = new char[contents_size];
+    MPI_Bcast(contents_buffer, contents_size, MPI_CHAR, 0, MPI_COMM_WORLD);
+    contents = std::string(contents_buffer,contents_size);
+    delete[] contents_buffer;
+  }
+#endif
   std::vector<std::string> lines;
   SplitString(contents, '\n', &lines);
   for (size_t i = 0; i < lines.size(); ++i) {
@@ -6074,6 +6116,23 @@ void InitGoogleTestImpl(int* argc, CharType** argv) {
   if (GTestIsInitialized()) return;
 
   if (*argc <= 0) return;
+
+#if GTEST_HAS_MPI
+  int flag = 0;
+  int ierr = MPI_Initialized(&flag);
+  if( ierr != 0 )
+  {
+    GTEST_LOG_(ERROR)
+      << "Error calling MPI_Initialized in InitGoogleTest, aborting...";
+    return;
+  }
+  if( !flag )
+  {
+    GTEST_LOG_(ERROR)
+      << "You need to call MPI_Init or MPI_Init_thread before InitGoogleTest, aborting...";
+    return;
+  }
+#endif // GTEST_HAS_MPI
 
   g_argvs.clear();
   for (int i = 0; i != *argc; i++) {

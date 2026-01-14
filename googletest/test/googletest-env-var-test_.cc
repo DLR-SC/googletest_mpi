@@ -110,6 +110,9 @@ void PrintFlag(const char* flag) {
 }  // namespace testing
 
 int main(int argc, char** argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   testing::InitGoogleTest(&argc, argv);
 
   if (argc != 2) {
@@ -118,5 +121,8 @@ int main(int argc, char** argv) {
   }
 
   testing::PrintFlag(argv[1]);
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
   return 0;
 }

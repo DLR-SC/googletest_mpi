@@ -2765,11 +2765,18 @@ int gmock_main(int argc, char **argv) {
 #else
 int main(int argc, char **argv) {
 #endif  // GMOCK_RENAME_MAIN
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   testing::InitGoogleMock(&argc, argv);
   // Ensures that the tests pass no matter what value of
   // --gmock_catch_leaked_mocks and --gmock_verbose the user specifies.
   testing::GMOCK_FLAG(catch_leaked_mocks) = true;
   testing::GMOCK_FLAG(verbose) = testing::internal::kWarningVerbosity;
 
-  return RUN_ALL_TESTS();
+  int result = RUN_ALL_TESTS();
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
+  return result;
 }

@@ -100,6 +100,9 @@ TEST(Test, Test2) {
 }
 
 int main(int argc, char** argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   testing::InitGoogleTest(&argc, argv);
   testing::UnitTest::GetInstance()->listeners().Append(new ThrowListener);
 
@@ -112,5 +115,8 @@ int main(int argc, char** argv) {
   if (kTestForContinuingTest == 0) {
     Fail("Should have continued with other tests, but did not.");
   }
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
   return 0;
 }

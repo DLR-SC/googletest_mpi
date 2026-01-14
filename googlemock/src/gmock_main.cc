@@ -28,6 +28,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
+#if GTEST_HAS_MPI
+// Some MPI vendors require mpi.h to be included before anything else.
+#include <mpi.h>
+#endif // GTEST_HAS_MPI
+
 #include <iostream>
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -55,11 +60,26 @@ GTEST_API_ int _tmain(int argc, TCHAR** argv) {
 #else
 GTEST_API_ int main(int argc, char** argv) {
 #endif  // GTEST_OS_WINDOWS_MOBILE
+#if GTEST_HAS_MPI
+  if( MPI_Init(&argc, &argv) != MPI_SUCCESS )
+  {
+    std::cout << "Error calling MPI_Init!\n";
+    return 1;
+  }
+#endif
   std::cout << "Running main() from gmock_main.cc\n";
   // Since Google Mock depends on Google Test, InitGoogleMock() is
   // also responsible for initializing Google Test.  Therefore there's
   // no need for calling testing::InitGoogleTest() separately.
   testing::InitGoogleMock(&argc, argv);
-  return RUN_ALL_TESTS();
+  int result = RUN_ALL_TESTS();
+#if GTEST_HAS_MPI
+  if( MPI_Finalize() != MPI_SUCCESS )
+  {
+    std::cout << "Error calling MPI_Finalize!\n";
+    return 1;
+  }
+#endif
+  return result;
 }
 #endif

@@ -37,6 +37,15 @@ TEST(DummyTest, Dummy) {
   // testing::InitGoogleTest() being called first.
 }
 
-int main() {
-  return RUN_ALL_TESTS();
+int main(int argc, char** argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
+  int result = RUN_ALL_TESTS();
+
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
+  return result;
 }

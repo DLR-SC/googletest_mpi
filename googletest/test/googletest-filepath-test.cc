@@ -491,20 +491,47 @@ class DirectoryCreationTest : public Test {
     remove(testdata_file_.c_str());
     remove(unique_file0_.c_str());
     remove(unique_file1_.c_str());
-    posix::RmDir(testdata_path_.c_str());
+#if GTEST_HAS_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if( rank == 0 ) {
+#endif
+      posix::RmDir(testdata_path_.c_str());
+#if GTEST_HAS_MPI
+    }
+#endif
   }
 
   void TearDown() override {
     remove(testdata_file_.c_str());
     remove(unique_file0_.c_str());
     remove(unique_file1_.c_str());
-    posix::RmDir(testdata_path_.c_str());
+#if GTEST_HAS_MPI
+    MPI_Barrier(MPI_COMM_WORLD);
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if( rank == 0 ) {
+#endif
+      posix::RmDir(testdata_path_.c_str());
+#if GTEST_HAS_MPI
+    }
+#endif
   }
 
   void CreateTextFile(const char* filename) {
-    FILE* f = posix::FOpen(filename, "w");
-    fprintf(f, "text\n");
-    fclose(f);
+#if GTEST_HAS_MPI
+    int rank = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if( rank == 0 )
+    {
+#endif // GTEST_HAS_MPI
+      FILE* f = posix::FOpen(filename, "w");
+      fprintf(f, "text\n");
+      fclose(f);
+#if GTEST_HAS_MPI
+    }
+#endif
   }
 
   // Strings representing a directory and a file, with identical paths

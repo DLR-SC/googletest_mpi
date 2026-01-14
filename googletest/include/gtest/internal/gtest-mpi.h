@@ -1,4 +1,4 @@
-// Copyright 2008, Google Inc.
+// Copyright 2021, Johannes Holke.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -26,46 +26,37 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// Authors: johannes.holke@dlr.de (Johannes Holke)
+//
+// Low-level types and utilities for extending Google Test with MPI support.
+// This file should be included in each internal Google Test file that requires 
+// MPI. If MPI support is enabled the MPI headers will be included together
+// with this file.
+// Since some MPI vendors require MPI to be included first 
+// ALWAYS INCLUDE THISE HEADER FIRST before including other headers.
+//
+// Why are the contents of this file not part of gtest-port.h?
+//   Because the gtest-port.h is not required to be included first and
+//   we do not want to change this requirement.
 
+#ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_MPI_H_
+#define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_MPI_H_
 
-// A helper program for testing how Google Test determines whether to use
-// colors in the output.  It prints "YES" and returns 1 if Google Test
-// decides to use colors, and prints "NO" and returns 0 otherwise.
+//   GTEST_HAS_MPI            - Define it to 1/0 to indicate that <mpi.h>
+//                              is/isn't available.
 
-#include <stdio.h>
-
-#include "gtest/gtest.h"
-#include "src/gtest-internal-inl.h"
-
-using testing::internal::ShouldUseColor;
-
-// The purpose of this is to ensure that the UnitTest singleton is
-// created before main() is entered, and thus that ShouldUseColor()
-// works the same way as in a real Google-Test-based test.  We don't actual
-// run the TEST itself.
-TEST(GTestColorTest, Dummy) {
-}
-
-int main(int argc, char** argv) {
-#if GTEST_HAS_MPI
-  MPI_Init(&argc, &argv);
+// Enable MPI
+// To enable MPI define GTEST_HAS_MPI to 1 before
+// including this header.
+#ifndef GTEST_HAS_MPI
+#define GTEST_HAS_MPI 0
 #endif
-  testing::InitGoogleTest(&argc, argv);
 
-  int result;
-  if (ShouldUseColor(true)) {
-    // Google Test decides to use colors in the output (assuming it
-    // goes to a TTY).
-    printf("YES\n");
-    result = 1;
-  } else {
-    // Google Test decides not to use colors in the output.
-    printf("NO\n");
-    result = 0;
-  }
-
+// Include the MPI header
 #if GTEST_HAS_MPI
-  MPI_Finalize();
+#include <mpi.h>
 #endif
-  return result;
-}
+
+#endif // GTEST_INCLUDE_GTEST_INTERNAL_GTEST_MPI_H_
+

@@ -86,7 +86,14 @@ TEST(SehExceptionDeasTest, CatchExceptionsDoesNotInterfere) {
 #endif  // GTEST_HAS_DEATH_TEST
 
 int main(int argc, char** argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   testing::InitGoogleTest(&argc, argv);
   testing::GTEST_FLAG(catch_exceptions) = GTEST_ENABLE_CATCH_EXCEPTIONS_ != 0;
-  return RUN_ALL_TESTS();
+  int result = RUN_ALL_TESTS();
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
+  return result;
 }
