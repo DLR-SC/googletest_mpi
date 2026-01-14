@@ -213,7 +213,7 @@ bool FilePath::FileOrDirectoryExists() const {
   int result = (posix::Stat(pathname_.c_str(), &file_stat) == 0);
 #endif  // GTEST_OS_WINDOWS_MOBILE
 #if GTEST_HAS_MPI
-  MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&result, 1, MPI_INT, 0, GTEST_MPI_COMM_WORLD);
 #endif // GTEST_HAS_MPI
 
   return result;
@@ -246,7 +246,7 @@ bool FilePath::DirectoryExists() const {
       posix::IsDir(file_stat);
 #endif  // GTEST_OS_WINDOWS_MOBILE
 #if GTEST_HAS_MPI
-  MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&result, 1, MPI_INT, 0, GTEST_MPI_COMM_WORLD);
 #endif // GTEST_HAS_MPI
 
   return result;
@@ -328,7 +328,7 @@ bool FilePath::CreateFolder() const {
   int result;
 #if GTEST_HAS_MPI
   int rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_rank(GTEST_MPI_COMM_WORLD, &rank);
   if( rank == 0 ) {
 #endif // GTEST_HAS_MPI
 #if GTEST_OS_WINDOWS_MOBILE
@@ -343,7 +343,7 @@ bool FilePath::CreateFolder() const {
 #endif  // GTEST_OS_WINDOWS_MOBILE
 #if GTEST_HAS_MPI
   }
-  MPI_Bcast(&result, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&result, 1, MPI_INT, 0, GTEST_MPI_COMM_WORLD);
 #endif // GTEST_HAS_MPI
 
   if (result == -1) {

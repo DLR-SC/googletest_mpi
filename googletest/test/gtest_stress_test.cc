@@ -116,7 +116,12 @@ void CheckTestFailureCount(int expected_failures) {
 
 // Tests using SCOPED_TRACE() and Google Test assertions in many threads
 // concurrently.
+#if GTEST_HAS_MPI
+// disabled because asserts are global with MPI
+TEST(StressTest, DISABLED_CanUseScopedTraceAndAssertionsInManyThreads) {
+#else
 TEST(StressTest, CanUseScopedTraceAndAssertionsInManyThreads) {
+#endif
   {
     std::unique_ptr<ThreadWithParam<int> > threads[kThreadCount];
     Notification threads_can_start;
@@ -227,7 +232,16 @@ TEST(NonFatalFailureOnAllThreadsTest, ExpectNonFatalFailureOnAllThreads) {
 }  // namespace testing
 
 int main(int argc, char **argv) {
-#if GTEST_HAS_MPI
+#if GTEST_HAS_MPI && GTEST_HAS_PTHREADS
+  int providedThreadLevel;
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &providedThreadLevel);
+  if( providedThreadLevel != MPI_THREAD_MULTIPLE )
+  {
+    GTEST_LOG_(ERROR)
+      << "The used MPI library does not support the required MPI thread level (MPI_THREAD_MULTIPLE), aborting...";
+    return 1;
+  }
+#elif GTEST_HAS_MPI
   MPI_Init(&argc, &argv);
 #endif
   testing::InitGoogleTest(&argc, argv);
