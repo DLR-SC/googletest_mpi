@@ -175,6 +175,9 @@ void TestNoTestsSkipsSetUp() {
 }  // namespace
 
 int main(int argc, char** argv) {
+#if GTEST_HAS_MPI
+  Check( MPI_Init(&argc, &argv) == MPI_SUCCESS, "MPI_Init should return MPI_SUCCESS.");
+#endif
   testing::InitGoogleTest(&argc, argv);
 
   TestGlobalSetUp();
@@ -182,6 +185,9 @@ int main(int argc, char** argv) {
   TestNoTestsRunSetUpFailure();
   TestNoTestsSkipsSetUp();
 
+#if GTEST_HAS_MPI
+  Check( MPI_Finalize() == MPI_SUCCESS, "MPI_Finalize should return MPI_SUCCESS.");
+#endif
   printf("PASS\n");
   return 0;
 }

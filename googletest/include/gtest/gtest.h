@@ -49,6 +49,10 @@
 #ifndef GOOGLETEST_INCLUDE_GTEST_GTEST_H_
 #define GOOGLETEST_INCLUDE_GTEST_GTEST_H_
 
+// Some MPI vendors require the mpi.h to be included before anything else,
+// hence we need to include the gtest-mpi header (that - if enabled - includes mpi.h) first.
+#include "gtest/internal/gtest-mpi.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <limits>

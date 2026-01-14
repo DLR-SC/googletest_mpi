@@ -87,6 +87,9 @@ class TestNamePrinter : public EmptyTestEventListener {
 }  // namespace
 
 int main(int argc, char** argv) {
+#if GTEST_HAS_MPI
+  MPI_Init(&argc, &argv);
+#endif
   InitGoogleTest(&argc, argv);
 
   // Replaces the default printer with TestNamePrinter, which prints
@@ -95,5 +98,10 @@ int main(int argc, char** argv) {
   delete listeners.Release(listeners.default_result_printer());
   listeners.Append(new TestNamePrinter);
 
-  return RUN_ALL_TESTS();
+  int result = RUN_ALL_TESTS();
+
+#if GTEST_HAS_MPI
+  MPI_Finalize();
+#endif
+  return result;
 }
