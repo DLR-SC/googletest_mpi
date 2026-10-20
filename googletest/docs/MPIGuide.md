@@ -44,6 +44,8 @@ EXPECT/ASSERT_TRUE_MPI
 
 EXPECT/ASSERT_FALSE_MPI
 
+EXPECT/ASSERT_NEAR_MPI
+
 These macros work like their non _MPI counterpart with the addition that they
 are MPI collective operations. In particular they need to be called by each process
 in MPI_COMM_WORLD.
