@@ -686,7 +686,7 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 // Created by default when Death tests are supported, but other platforms can
 // use the Premature exit file without Death test support (e.g. for detecting
 // crashes).
-#if GTEST_HAS_DEATH_TEST || \
+#if defined(GTEST_HAS_DEATH_TEST) || \
     (defined(GTEST_OS_EMSCRIPTEN) && GTEST_HAS_FILE_SYSTEM)
 #define GTEST_INTERNAL_HAS_PREMATURE_EXIT_FILE 1
 #endif
