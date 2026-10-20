@@ -1684,7 +1684,7 @@ std::string GetBoolAssertionFailureMessage(
 // true.
 AssertionResult DoubleNearPredFormat(const char* expr1, const char* expr2,
                                      const char* abs_error_expr, double val1,
-                                     double val2, double abs_error) {
+                                     double val2, double abs_error, bool global) {
   // We want to return success when the two values are infinity and at least
   // one of the following is true:
   //  * The values are the same-signed infinity.
@@ -1694,11 +1694,11 @@ AssertionResult DoubleNearPredFormat(const char* expr1, const char* expr2,
   if (std::isinf(val1) && std::isinf(val2) &&
       (std::signbit(val1) == std::signbit(val2) ||
        (abs_error > 0.0 && std::isinf(abs_error)))) {
-    return AssertionSuccess();
+    return AssertionSuccess(global);
   }
 
   const double diff = fabs(val1 - val2);
-  if (diff <= abs_error) return AssertionSuccess();
+  if (diff <= abs_error) return AssertionSuccess(global);
 
   // Find the value which is closest to zero.
   const double min_abs = std::min(fabs(val1), fabs(val2));
@@ -1713,7 +1713,7 @@ AssertionResult DoubleNearPredFormat(const char* expr1, const char* expr2,
   // that an equality check was actually intended.
   if (!(std::isnan)(val1) && !(std::isnan)(val2) && abs_error > 0 &&
       abs_error < epsilon) {
-    return AssertionFailure()
+    return AssertionFailure(global)
            << "The difference between " << expr1 << " and " << expr2 << " is "
            << diff << ", where\n"
            << expr1 << " evaluates to " << val1 << ",\n"
@@ -1725,7 +1725,7 @@ AssertionResult DoubleNearPredFormat(const char* expr1, const char* expr2,
            << ", thus making this EXPECT_NEAR check equivalent to "
               "EXPECT_EQUAL. Consider using EXPECT_DOUBLE_EQ instead.";
   }
-  return AssertionFailure()
+  return AssertionFailure(global)
          << "The difference between " << expr1 << " and " << expr2 << " is "
          << diff << ", which exceeds " << abs_error_expr << ", where\n"
          << expr1 << " evaluates to " << val1 << ",\n"

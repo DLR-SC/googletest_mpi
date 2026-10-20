@@ -1632,7 +1632,8 @@ GTEST_API_ AssertionResult DoubleNearPredFormat(const char* expr1,
                                                 const char* expr2,
                                                 const char* abs_error_expr,
                                                 double val1, double val2,
-                                                double abs_error);
+                                                double abs_error,
+                                                bool global = false);
 
 using GoogleTest_NotSupported_OnFunctionReturningNonVoid = void;
 
@@ -2123,6 +2124,16 @@ class [[nodiscard]] TestWithParam : public Test,
 #define ASSERT_NEAR(val1, val2, abs_error)                                   \
   ASSERT_PRED_FORMAT3(::testing::internal::DoubleNearPredFormat, val1, val2, \
                       abs_error)
+
+#if GTEST_HAS_MPI
+#define EXPECT_NEAR_MPI(val1, val2) \
+  EXPECT_PRED_FORMAT3_MPI(::testing::internal::DoubleNearPredFormat, val1, val2, \
+                      abs_error)
+
+#define ASSERT_NEAR_MPI(val1, val2, abs_error)                                   \
+  ASSERT_PRED_FORMAT3_MPI(::testing::internal::DoubleNearPredFormat, val1, val2, \
+                      abs_error)
+#endif
 
 // These predicate format functions work on floating-point values, and
 // can be used in {ASSERT|EXPECT}_PRED_FORMAT2*(), e.g.
