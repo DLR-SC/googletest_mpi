@@ -678,6 +678,10 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 #if !GTEST_HAS_MPI
 // The usage of fork in an MPI process is not standardized and probably not supported.
 #define GTEST_HAS_DEATH_TEST 1
+#else
+#ifndef GTEST_HAS_DEATH_TEST
+#define GTEST_HAS_DEATH_TEST 0
+#endif  // !defined(GTEST_HAS_DEATH_TEST) 
 #endif  // !GTEST_HAS_MPI
 #endif  // GTEST_HAS_FILE_SYSTEM
 #endif
@@ -686,7 +690,7 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 // Created by default when Death tests are supported, but other platforms can
 // use the Premature exit file without Death test support (e.g. for detecting
 // crashes).
-#if defined(GTEST_HAS_DEATH_TEST) || \
+#if GTEST_HAS_DEATH_TEST || \
     (defined(GTEST_OS_EMSCRIPTEN) && GTEST_HAS_FILE_SYSTEM)
 #define GTEST_INTERNAL_HAS_PREMATURE_EXIT_FILE 1
 #endif
